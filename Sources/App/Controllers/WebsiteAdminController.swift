@@ -1,5 +1,6 @@
 import Vapor
 import Authentication
+import FluentSQL
 
 struct WebsiteAdminController: RouteCollection {
     
@@ -16,6 +17,7 @@ struct WebsiteAdminController: RouteCollection {
         
         // articles routes
         adminRoutes.get("articles", use: allArticlesHandler)
+        adminRoutes.get("articles", "page", Int.parameter, use: allArticlesPageHandler)
         adminRoutes.get("articles", "create", use: createArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", "create", use: createArticlePostHandler)
         adminRoutes.get("articles", Article.parameter, "edit", use: editArticleHandler)
@@ -24,6 +26,7 @@ struct WebsiteAdminController: RouteCollection {
         
         // tags routes
         adminRoutes.get("tags", use: allTagsHandler)
+        adminRoutes.get("tags", "page", Int.parameter, use: allTagsPageHandler)
         adminRoutes.get("tags", "create", use: createTagHandler)
         adminRoutes.post(AdminTagData.self, at:"tags", "create", use: createTagPostHandler)
         adminRoutes.get("tags", Tag.parameter, "edit", use: editTagHandler)
@@ -32,6 +35,7 @@ struct WebsiteAdminController: RouteCollection {
         
         // users routes
         adminRoutes.get("users", use: allUsersHandler)
+        adminRoutes.get("users", "page", Int.parameter, use: allUsersPageHandler)
         adminRoutes.get("users", User.parameter, "edit", use: editUserHandler)
         adminRoutes.post(AdminUserData.self, at:"users", User.parameter, "edit", use: editUserPostHandler)
         adminRoutes.post("users", User.parameter, "delete", use: deleteUserPostHandler)
@@ -41,9 +45,9 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.post(AdminRegisterData.self, at:"users", "register", use: registerPostHandler)
         
         // profilePictures routes
-//        adminRoutes.get("users", User.parameter, "profilePicture", use: getUsersProfilePictureHandler)
-//        adminRoutes.get("users", User.parameter, "addProfilePicture", use: addProfilePictureHandler)
-//        adminRoutes.post("users", User.parameter, "addProfilePicture", use: addProfilePicturePostHandler)
+        //        adminRoutes.get("users", User.parameter, "profilePicture", use: getUsersProfilePictureHandler)
+        //        adminRoutes.get("users", User.parameter, "addProfilePicture", use: addProfilePictureHandler)
+        //        adminRoutes.post("users", User.parameter, "addProfilePicture", use: addProfilePicturePostHandler)
     }
     
     // Mark: - Index Route
@@ -57,14 +61,77 @@ struct WebsiteAdminController: RouteCollection {
     // Mark: - Article Routes
     
     func allArticlesHandler(_ req: Request) throws -> Future<View> {
-        return Article.query(on: req).all().flatMap(to: View.self) { articles in
-            return try articles.leaf(on: req).flatMap(to: View.self) { leaffedArticles in
-                let context = AdminArticlesContext(tabTitle: "MyBlog>Admin : Articles",
-                                                   pageTitle: "liste des articles",
-                                                   articles: leaffedArticles)
-                return try req.view().render("admin/articles", context)
+        
+        let searchTerm = req.query[String.self, at:"search"]
+        let paginator = AdminPaginator(WithPageNumber: 1, forType: .articles(searchTerm: searchTerm))
+        
+        return Article.query(on: req).group(.or) { orGroup in
+            
+            if let term = searchTerm {
+                orGroup.filter(\.title ~~ term)
             }
+            
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { articles in
+                return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
+                    
+                    var leaffedArticles = fetchedLeaffedArticles
+                    
+                    var olderPagePath: String?
+                    if fetchedLeaffedArticles.count > paginator.articlesPerPage {
+                        leaffedArticles.removeLast()
+                        olderPagePath = paginator.olderPagePath
+                    }
+                    
+                    let context = AdminArticlesContext(tabTitle: paginator.tabTitle,
+                                                       pageTitle: paginator.pageTitle,
+                                                       articles: leaffedArticles,
+                                                       olderPagePath: olderPagePath,
+                                                       newerPagePath: paginator.newerPagePath)
+                    return try req.view().render("admin/articles", context)
+                    
+                }
+                
+                
         }
+    }
+    
+    func allArticlesPageHandler(_ req: Request) throws -> Future<View> {
+        let pageNumber = try req.parameters.next(Int.self)
+        let searchTerm = req.query[String.self, at:"search"]
+        
+        let paginator = AdminPaginator(WithPageNumber: pageNumber, forType: .articles(searchTerm: searchTerm))
+        
+        return Article.query(on: req).group(.or) { orGroup in
+            
+            if let term = searchTerm {
+                orGroup.filter(\.title ~~ term)
+            }
+            
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { articles in
+                return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
+                    
+                    var leaffedArticles = fetchedLeaffedArticles
+                    
+                    var olderPagePath: String?
+                    if fetchedLeaffedArticles.count > paginator.articlesPerPage {
+                        leaffedArticles.removeLast()
+                        olderPagePath = paginator.olderPagePath
+                    }
+                    
+                    let context = AdminArticlesContext(tabTitle: paginator.tabTitle,
+                                                       pageTitle: paginator.pageTitle,
+                                                       articles: leaffedArticles,
+                                                       olderPagePath: olderPagePath,
+                                                       newerPagePath: paginator.newerPagePath)
+                    return try req.view().render("admin/articles", context)
+                    
+                }
+                
+                
+        }
+        
     }
     
     func createArticleHandler(_ req: Request) throws -> Future<View> {
@@ -118,7 +185,7 @@ struct WebsiteAdminController: RouteCollection {
             guard let tag = tag else { fatalError("the tag should exist") }
             
             let user = try req.requireAuthenticated(User.self)
-
+            
             return try req.parameters.next(Article.self).flatMap(to: Response.self) { article in
                 article.authorID = try user.requireID()
                 article.slugURL = articleUpdated.slugURL
@@ -132,7 +199,7 @@ struct WebsiteAdminController: RouteCollection {
                 let detachFuture = article.tags.detachAll(on: req)
                 let attachFuture = article.tags.attach(tag, on: req)
                 
-            
+                
                 return map(to: Response.self, articleFuture, detachFuture, attachFuture) { _, _, _ in
                     return req.redirect(to: "/admin/articles")
                     
@@ -151,20 +218,77 @@ struct WebsiteAdminController: RouteCollection {
     // MARK:- Tag Routes
     
     func allTagsHandler(_ req: Request) throws -> Future<View> {
-        return Tag.query(on: req).all().flatMap(to: View.self) { tags in
-            let context = AdminTagsContext(tabTitle: "MyBlog>Admin : Tags",
-                                           pageTitle: "Liste des tags",
-                                           tags: tags)
-            return try req.view().render("admin/tags", context)
+        let searchTerm = req.query[String.self, at:"search"]
+        
+        let paginator = AdminPaginator(WithPageNumber: 1, forType: .tags(searchTerm: searchTerm))
+        
+        return Tag.query(on: req).group(.or) { orGroup in
+            
+            if let term = searchTerm {
+                orGroup.filter(\.name == term)
+            }
+            
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { fetchedTags in
+                
+                var tags = fetchedTags
+                
+                var olderPagePath: String?
+                if fetchedTags.count > paginator.articlesPerPage {
+                    tags.removeLast()
+                    olderPagePath = paginator.olderPagePath
+                }
+                
+                let context = AdminTagsContext(tabTitle: paginator.tabTitle,
+                                               pageTitle: paginator.pageTitle,
+                                               tags: tags,
+                                               olderPagePath: olderPagePath,
+                                               newerPagePath: paginator.newerPagePath)
+                return try req.view().render("admin/tags", context)
+                
         }
     }
+    
+    func allTagsPageHandler(_ req: Request) throws -> Future<View> {
+        let searchTerm = req.query[String.self, at:"search"]
+        let pageNumber = try req.parameters.next(Int.self)
+        
+        let paginator = AdminPaginator(WithPageNumber: pageNumber, forType: .tags(searchTerm: searchTerm))
+        
+        return Tag.query(on: req).group(.or) { orGroup in
+            
+            if let term = searchTerm {
+                orGroup.filter(\.name == term)
+            }
+            
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { fetchedTags in
+                
+                var tags = fetchedTags
+                
+                var olderPagePath: String?
+                if fetchedTags.count > paginator.articlesPerPage {
+                    tags.removeLast()
+                    olderPagePath = paginator.olderPagePath
+                }
+                
+                let context = AdminTagsContext(tabTitle: paginator.tabTitle,
+                                               pageTitle: paginator.pageTitle,
+                                               tags: tags,
+                                               olderPagePath: olderPagePath,
+                                               newerPagePath: paginator.newerPagePath)
+                return try req.view().render("admin/tags", context)
+        }
+    }
+    
+    
     
     func createTagHandler(_ req: Request) throws -> Future<View> {
         let context = AdminTagContext(tabTitle: "MyBlog>Admin : Create a New Tag",
                                       pageTitle: "Créer un nouveau Tag",
-                                  tag: nil,
-                                  isEditing: false)
-           
+                                      tag: nil,
+                                      isEditing: false)
+        
         return try req.view().render("admin/tag", context)
     }
     
@@ -181,7 +305,7 @@ struct WebsiteAdminController: RouteCollection {
                                           pageTitle: "Edition d'un tag",
                                           tag: tag,
                                           isEditing: true)
-        
+            
             return try req.view().render("admin/tag", context)
         }
     }
@@ -193,7 +317,7 @@ struct WebsiteAdminController: RouteCollection {
             
             tag.name = data.name
             tag.description = data.description
-        
+            
             return tag.update(on: req).transform(to: req.redirect(to: "/admin/tags"))
         }
     }
@@ -207,13 +331,65 @@ struct WebsiteAdminController: RouteCollection {
     // MARK:- Users Routes
     
     func allUsersHandler(_ req: Request) throws -> Future<View> {
-        return User.query(on: req).all().flatMap(to: View.self) { users in
+        let searchTerm = req.query[String.self, at:"search"]
+        
+        let paginator = AdminPaginator(WithPageNumber: 1, forType: .users(searchTerm: searchTerm))
+        
+        return User.query(on: req).group(.or) { orGroup in
             
-            let publicUsers = users.map { $0.convertToPublic() }
-            let context = AdminUsersContext(title: "MyBlog>Admin : Users",
-                                            users: publicUsers)
+            if let term = searchTerm {
+                orGroup.filter(\.username == term)
+            }
             
-            return try req.view().render("admin/users", context)
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { fetchedUsers in
+                
+                var publicUsers = fetchedUsers.map { $0.convertToPublic() }
+
+                var olderPagePath: String?
+                if fetchedUsers.count > paginator.articlesPerPage {
+                    publicUsers.removeLast()
+                    olderPagePath = paginator.olderPagePath
+                }
+                
+                let context = AdminUsersContext(tabTitle: paginator.tabTitle,
+                                               pageTitle: paginator.pageTitle,
+                                               users: publicUsers,
+                                               olderPagePath: olderPagePath,
+                                               newerPagePath: paginator.newerPagePath)
+                return try req.view().render("admin/users", context)
+        }
+    }
+    
+    func allUsersPageHandler(_ req: Request) throws -> Future<View> {
+        let searchTerm = req.query[String.self, at:"search"]
+        let pageNumber = try req.parameters.next(Int.self)
+        
+        let paginator = AdminPaginator(WithPageNumber: pageNumber, forType: .users(searchTerm: searchTerm))
+        
+        return User.query(on: req).group(.or) { orGroup in
+            
+            if let term = searchTerm {
+                orGroup.filter(\.username == term)
+            }
+            
+            }.range(paginator.rangePlusOne).all()
+            .flatMap(to: View.self) { fetchedUsers in
+                
+                var publicUsers = fetchedUsers.map { $0.convertToPublic() }
+                
+                var olderPagePath: String?
+                if fetchedUsers.count > paginator.articlesPerPage {
+                    publicUsers.removeLast()
+                    olderPagePath = paginator.olderPagePath
+                }
+                
+                let context = AdminUsersContext(tabTitle: paginator.tabTitle,
+                                                pageTitle: paginator.pageTitle,
+                                                users: publicUsers,
+                                                olderPagePath: olderPagePath,
+                                                newerPagePath: paginator.newerPagePath)
+                return try req.view().render("admin/users", context)
         }
     }
     
@@ -245,40 +421,40 @@ struct WebsiteAdminController: RouteCollection {
     }
     
     /*
-    func getUsersProfilePictureHandler(_ req: Request) throws -> Future<Response> {
-        return try req.parameters.next(User.self).flatMap(to: Response.self) { user in
-            guard let filename = user.pictureProfile else {
-                throw Abort(.notFound)
-            }
-            let path = try req.make(DirectoryConfig.self).workDir + self.imageFolder + filename
-            return try req.streamFile(at: path)
-        }
-    }
-    
-    func addProfilePictureHandler(_ req: Request) throws -> Future<View> {
-        return try req.parameters.next(User.self).flatMap { user in
-            try req.view().render("admin/addProfilePicture", ["title": "Add Profile Picture", "username": user.name])
-        }
-    }
-    
-    func addProfilePicturePostHandler(_ req: Request) throws -> Future<Response> {
-        return try flatMap(to: Response.self,
-                           req.parameters.next(User.self),
-                           req.content.decode(ImageUploadData.self)) { user, imageData in
-                            
-                            let workPath = try req.make(DirectoryConfig.self).workDir
-                            let name = try "\(user.requireID())-\(UUID().uuidString).jpg"
-                            let path = workPath + self.imageFolder + name
-                            
-                            FileManager().createFile(atPath: path,
-                                                     contents: imageData.picture,
-                                                     attributes: nil)
-                            user.pictureProfile = name
-                            // let redirect = try req.redirect(to: "/users/\(user.requireID())")
-                            let redirect = req.redirect(to: "/admin/users/")
-                            return user.save(on: req).transform(to: redirect)
-        }
-    }
+     func getUsersProfilePictureHandler(_ req: Request) throws -> Future<Response> {
+     return try req.parameters.next(User.self).flatMap(to: Response.self) { user in
+     guard let filename = user.pictureProfile else {
+     throw Abort(.notFound)
+     }
+     let path = try req.make(DirectoryConfig.self).workDir + self.imageFolder + filename
+     return try req.streamFile(at: path)
+     }
+     }
+     
+     func addProfilePictureHandler(_ req: Request) throws -> Future<View> {
+     return try req.parameters.next(User.self).flatMap { user in
+     try req.view().render("admin/addProfilePicture", ["title": "Add Profile Picture", "username": user.name])
+     }
+     }
+     
+     func addProfilePicturePostHandler(_ req: Request) throws -> Future<Response> {
+     return try flatMap(to: Response.self,
+     req.parameters.next(User.self),
+     req.content.decode(ImageUploadData.self)) { user, imageData in
+     
+     let workPath = try req.make(DirectoryConfig.self).workDir
+     let name = try "\(user.requireID())-\(UUID().uuidString).jpg"
+     let path = workPath + self.imageFolder + name
+     
+     FileManager().createFile(atPath: path,
+     contents: imageData.picture,
+     attributes: nil)
+     user.pictureProfile = name
+     // let redirect = try req.redirect(to: "/users/\(user.requireID())")
+     let redirect = req.redirect(to: "/admin/users/")
+     return user.save(on: req).transform(to: redirect)
+     }
+     }
      */
     
     // MARK: Register route
@@ -344,6 +520,8 @@ struct AdminArticlesContext: Encodable {
     let tabTitle: String
     let pageTitle: String
     let articles: [Article.Leaffed]
+    let olderPagePath: String?
+    let newerPagePath: String?
 }
 
 struct AdminArticleContext: Encodable {
@@ -369,6 +547,8 @@ struct AdminTagsContext: Encodable {
     let tabTitle: String
     let pageTitle: String
     let tags: [Tag]
+    let olderPagePath: String?
+    let newerPagePath: String?
 }
 
 struct AdminTagContext: Encodable {
@@ -386,8 +566,11 @@ struct AdminTagData: Content {
 // MARK: - Struct Users
 
 struct AdminUsersContext: Encodable {
-    let title: String
+    let tabTitle: String
+    let pageTitle: String
     let users: [User.Public]
+    let olderPagePath: String?
+    let newerPagePath: String?
 }
 
 struct AdminUserContext: Encodable {

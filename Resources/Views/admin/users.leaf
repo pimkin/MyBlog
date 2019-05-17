@@ -5,66 +5,91 @@
 <br>
 <br>
 
-<h1 align="center">List of users</h1>
+<h1 align="center">#(pageTitle)</h1>
 
 <br>
 <br>
 
-
-
-
-<div>
+<div class="row justify-content-between">
 	<form>
 		<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/register">New user</button>
+	</form>
+
+		<form>
+			<div class="row form-group justify-content-around">
+				<div style="margin-right: 20px;">
+					<input type="text" class="form-control" name="search"  placeholder="Search for..." >
+				</div >
+				<div>
+					<span class="input-group-btn">
+						<button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/users">Go!</button>
+					</span>
+				</div>
+			</div>
 	</form>
 </div>
 
 
-<div>
 
-	#if(count(users) > 0) {
+
+	<div>
+
+		#if(count(users) > 0) {
 
 		#for(user in users) {
 
-	
-			<div class="card text-center" style="margin-top: 10px;">
-				<div class="card-body">
-					<div class="row">
-						<div class="col-2">
-							<h5><span> #(user.name)</span></h5>
-						</div>
-						<div class="col-2">
-							<h5><span> #(user.username)</span></h5>
-						</div>
-						<div class="col-6">
-							<p class="card-text">#if(user.biography) { #(user.biography)
-												} else {
-													No biography yet
-												 }
 
-							</p>
-						</div>
-						<div class="col-2">
-							<form>
-								#// <button class="btn btn-primary" type="submit" formmethod="POST" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
-								<button class="btn btn-warning" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/edit">Edit</button>
-								#// <button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/addProfilePicture">#if(user.profilePicture) {Update} else {Profile Picture}</button>
-								#// <button class="btn btn-danger" type="submit" formmethod="POST" formaction="/admin/users/#(user.id)/delete">Delete</button>
-							</form>
-						</div>
+		<div class="card text-center" style="margin-top: 10px;">
+			<div class="card-body">
+				<div class="row">
+					<div class="col-2">
+						<h5><span> #(user.name)</span></h5>
+					</div>
+					<div class="col-2">
+						<h5><span> #(user.username)</span></h5>
+					</div>
+					<div class="col-6">
+						<p class="card-text">#if(user.biography) { #(user.biography)
+						} else {
+							No biography yet
+						}
+						</p>
+					</div>
+					<div class="col-2">
+						<form>
+					#// <button class="btn btn-primary" type="submit" formmethod="POST" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
+						<button class="btn btn-warning" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/edit">Edit</button>
+					#// <button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/addProfilePicture">#if(user.profilePicture) {Update} else {Profile Picture}</button>
+					#// <button class="btn btn-danger" type="submit" formmethod="POST" formaction="/admin/users/#(user.id)/delete">Delete</button>
+						</form>
 					</div>
 				</div>
 			</div>
+		</div>
 		}
 
-	} else { 
+		} else { 
 			<h2 align="center">Error !! It should have at least one user created !!</h2>
-	}
+		}
+	</div>
+
+<br>
+<br>
 
 
-	<br />
+<!-- Pagination -->
+<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
+	<li class="page-item #if(newerPagePath == nil) {disabled}">
+		<a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
+	</li>
+	<li class="page-item  #if(olderPagePath == nil) {disabled}">
+		<a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
+	</li>
+</ul>
 
-</div>
+<br />
+
+
 
 
 }
