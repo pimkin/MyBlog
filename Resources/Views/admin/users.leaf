@@ -1,0 +1,72 @@
+#set("content") {
+
+<div class="container"></div>
+
+<br>
+<br>
+
+<h1 align="center">List of users</h1>
+
+<br>
+<br>
+
+
+
+
+<div>
+	<form>
+		<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/register">New user</button>
+	</form>
+</div>
+
+
+<div>
+
+	#if(count(users) > 0) {
+
+		#for(user in users) {
+
+	
+			<div class="card text-center" style="margin-top: 10px;">
+				<div class="card-body">
+					<div class="row">
+						<div class="col-2">
+							<h5><span> #(user.name)</span></h5>
+						</div>
+						<div class="col-2">
+							<h5><span> #(user.username)</span></h5>
+						</div>
+						<div class="col-6">
+							<p class="card-text">#if(user.biography) { #(user.biography)
+												} else {
+													No biography yet
+												 }
+
+							</p>
+						</div>
+						<div class="col-2">
+							<form>
+								#// <button class="btn btn-primary" type="submit" formmethod="POST" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
+								<button class="btn btn-warning" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/edit">Edit</button>
+								#// <button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/addProfilePicture">#if(user.profilePicture) {Update} else {Profile Picture}</button>
+								#// <button class="btn btn-danger" type="submit" formmethod="POST" formaction="/admin/users/#(user.id)/delete">Delete</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+
+	} else { 
+			<h2 align="center">Error !! It should have at least one user created !!</h2>
+	}
+
+
+	<br />
+
+</div>
+
+
+}
+
+#embed("admin/base")

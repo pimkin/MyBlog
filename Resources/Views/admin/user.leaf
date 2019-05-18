@@ -1,0 +1,54 @@
+#set("content") {
+	
+	<h1>#(pageTitle)</h1>
+
+
+	<form method="post">
+		<div class="form-group">
+			<label for="name">Name</label>
+			<input type="text" name="name" class="form-control" id="name" value="#(user.name)" />
+		</div>
+
+		<div class="form-group">
+			<label for="username">Username</label>
+			<input type="text" name="username" class="form-control" id="username" value="#(user.username)"/>
+		</div>
+
+
+		#/*
+		<div class="form-group">
+			<label for="username">Profile Picture</label>
+				<div class="row justify-content-center"></div>
+					
+						<img src="/admin/users/#(user.id)/profilePicture" alt="Profile picture #(user.name)">
+					
+										<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/addProfilePicture">Change Profile Picture</button>
+					
+				</div>
+		</form>
+
+		#*/
+
+		
+		<div class="row justify-content-around">
+		<div>
+		</div>
+		<div>
+		<button type="submit" class="btn btn-warning">Cancel</button>
+		<button type="submit" class="btn btn-primary">Edit</button>
+		</div>
+		#//<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/users/#(user.id)/addProfilePicture">#if(user.profilePicture) {Update} else {Profile Picture}</button>
+
+		</div>
+	</form>
+
+		
+
+	
+
+
+
+
+}
+
+#embed("admin/base")

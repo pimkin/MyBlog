@@ -1,0 +1,13 @@
+#set("content") {
+	
+
+<div class="card mb-4">
+  <div class="card-body">
+    <p class="card-text">You tried to access a page which does not exist !</p>
+  </div>
+  
+</div>
+  
+}
+
+#embed("base")

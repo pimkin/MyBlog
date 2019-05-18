@@ -1,0 +1,75 @@
+#set("content") {
+
+<h1 align="center">#(pageTitle)</h1>
+
+<br>
+
+<form method="post" action="createArticle">
+
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" name="title" class="form-control" id="title" value="#(article.title)" placeholder="Enter a title for your article"  />
+  </div>
+
+  <div class="form-group">
+    <label for="slugURL">SlugURL</label>
+    <input type="text" name="slugURL" class="form-control" id="slugURL" value="#(article.slugURL)" placeholder="Enter a slugURL for your article"/>
+  </div>
+
+  <div class="form-group">
+    <label for="tagSelection">Tag</label>
+
+    <select class="custom-select" id="tagSelection" name="tag">
+
+     #// <option selected>Select a tag</option>
+     #for(tag in tags) {
+     <option value="#(tag.name)">#(tag.name)</option>
+   } 
+ </select>
+</div>
+
+
+
+<div class="form-group">
+  <label for="content">Content</label>
+  <textarea class="form-control tinymce" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
+
+</div>
+
+<div class="form-group">
+  <label for="snippet">Snippet</label>
+  <textarea class="form-control " id="snippet" name="snippet" rows="2" placeholder="Enter the snippet of your article" >#(article.snippet)</textarea>
+</div>
+
+
+<div class="row  justify-content-between form-group">
+  <div class="custom-control custom-checkbox align-items-center" style="margin-left: 50px">
+   <input type="checkbox" class="custom-control-input" id="checkbox_published" name="published" value="true">
+   <label class="custom-control-label" for="checkbox_published">Published</label>
+  </div>
+  <div>
+ <button type="submit" class="btn btn-warning" formmethod="GET" formaction="/admin/articles" style="margin-right: 20px;">Cancel</button>
+ #if(isEditing) {
+    <button type="submit" class="btn btn-primary" formmethod="POST" formaction="/admin/articles/#(article.id)/edit" style="margin-right: 50px">Edit</button>
+  } else {
+    <button type="submit" class="btn btn-primary" formmethod="POST" formaction="/admin/articles/create" style="margin-right: 50px">Create</button>
+  }
+  </div>
+
+  
+</div>
+
+</form>
+
+<br>
+<br>
+
+<!-- javascript -->
+<script type="text/javascript" src="/js/jquery-3.4.0.min.js"></script>
+<script type="text/javascript" src="/plugin/tinymce/tinymce.min.js"></script>
+<script type="text/javascript" src="/plugin/tinymce/init-tinymce.js"></script>
+
+}
+
+
+#embed("admin/base")

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>#(tabTitle)</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+  
+  <!-- My CSS -->
+  <link rel="stylesheet" href="/stylesheets/style.css">
+
+
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  
+</head>
+<body>
+
+ <!-- Start Navigation -->
+
+ <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="/">My Blog</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between" id="navbarResponsive">
+
+        
+      <ul class="navbar-nav">
+
+        <li class="nav-item #if(pageTitle == "About") { active }">
+          <a href="/about" class="nav-link">About</a>
+        </li>
+
+        #/*
+        <li class="nav-item #if(pageTitle == "Archives") { active }">
+          <a href="/archives" class="nav-link">Archives</a>
+        </li>
+
+        <li class="nav-item #if(pageTitle == "Accueil") { active }">
+          <a href="/contact" class="nav-link">Contact</a>
+        </li>
+        #*/
+        
+      </ul>
+
+      <ul class="navbar-nav">
+        #if(user != nil) {
+
+          <li class="nav-item">
+            <a href="/logout" class="nav-link">Log out</a>
+          </li>
+          <li class="nav-item">
+            <a href="/admin/" class="nav-link">Go to Admin</a>
+          </li>
+
+        } else {  
+
+        <li class="nav-item">
+          <a href="/login" class="nav-link">Log In</a>
+        </li>
+        #/*
+        <li class="nav-item #if(pageTitle == "Register") { active }">
+          <a href="/register" class="nav-link">Register</a>
+        </li>
+        #*/
+      }
+      </ul>
+
+      
+  </div>
+
+</div>
+</nav>
+
+<!-- End Navigation -->
+
+
+<!-- Start Content -->
+
+<div class="container">
+
+  <div class="row">
+
+    <!-- Blog Entries Column -->
+    <div class="col-md-8">
+
+     <h3 class="my-4">#(pageTitle)</h3>
+
+
+     <!-- Blog Post -->
+
+     #get(content)
+
+   </div>
+
+   <!-- Sidebar Widgets Column -->
+   <div class="col-md-4">
+
+    <!-- Search Widget -->
+    <div class="card my-4">
+      <h5 class="card-header">Search</h5>
+      <div class="card-body">
+        #//<div class="input-group">
+
+          <form>
+            <div class="row form-group justify-content-around">
+              <div>
+            <input type="text" class="form-control" name="search"  placeholder="Search for...">
+            </div>
+            <div>
+            <span class="input-group-btn">
+
+              <button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/">Go!</button>
+
+            </span>
+            </div>
+            </div>
+          </form>
+
+
+        </div>
+      #//</div>
+    </div>
+
+    <!-- Tags Widget -->
+    <div class="card my-4">
+      <h5 class="card-header">Tags</h5>
+      <div class="card-body">
+        <div class="row">
+          #for(tag in tags){
+          <div class="col-6" align="center">
+              <a href="/tag/#(tag.name)">#(tag.name)</a>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Side Widget -->
+  <div class="card my-4">
+    <h5 class="card-header">Side Widget</h5>
+    <div class="card-body">
+      You can put anything you want inside of these side widgets. They are easy to use, and feature the new Bootstrap 4 card containers!
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- Fin Content -->
+
+
+
+
+
+<!-- Footer -->
+
+<footer class="py-5 bg-dark">
+  <div class="container">
+    <p class="m-0 text-center text-white">Copyright &copy; Your Website 2019</p>
+  </div>
+</footer>
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script> 
+
+<!-- Fin Footer -->
+
+
+</body>
+</html>

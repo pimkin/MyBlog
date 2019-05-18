@@ -1,0 +1,15 @@
+#set("content") {
+	
+	<br>
+	<br>
+
+	<h1 align="center">You are on the administration page</h1>
+
+	<br>
+	<br>
+
+	<p>You can administrate MyBlog from this place !</p>
+
+}
+
+#embed("admin/base")

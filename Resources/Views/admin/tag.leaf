@@ -1,0 +1,38 @@
+
+#set("content") {
+  
+  <h1 align="center">#if(isEditing) { Edit } else { Create } tag</h1>
+
+  <br>
+
+  <form method="post" action="createTag">
+
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" name="name" class="form-control" id="name" placeholder="Enter the name of the new tag" #if(isEditing) { value="#(tag.name)" } />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <input type="text" name="description" class="form-control" id="description" placeholder="Enter a description for the tag" #if(isEditing) { value="#(tag.description)" }/>
+    </div>
+
+    <div class="row justify-content-end">
+    <button type="submit" class="btn btn-warning" formmethod="GET" formaction="/admin/tags/" style="margin-right: 20px;">Cancel</button>
+    #if(isEditing) {
+        <button type="submit" class="btn btn-primary" formmethod="POST" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
+    } else {
+       <button type="submit" class="btn btn-primary" formmethod="POST" formaction="/admin/tags/create">Create</button>
+    }
+    </div>
+  </form>
+
+  <br>
+  <br>
+  <br>
+
+}
+
+
+#embed("admin/base")
+
