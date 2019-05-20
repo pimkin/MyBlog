@@ -601,8 +601,8 @@ struct AdminUserContext: Encodable {
 struct AdminUserData: Content {
     let name: String
     let username: String
-    let password: String
 }
+
 
 struct ImageUploadData: Content {
     var picture: Data
