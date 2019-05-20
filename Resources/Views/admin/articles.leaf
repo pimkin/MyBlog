@@ -5,13 +5,26 @@
 	<h1>#(pageTitle)</h1>
 
 	<br>
+	<br>
 
+	<div class="row justify-content-between">
 	<form>
 	<button type="submit" class="btn btn-primary" formmethod="GET" formaction="/admin/articles/create">New Article</button>
 	</form>
 
-
-	<br>
+	<form>
+        <div class="row form-group justify-content-around">
+           <div style="margin-right: 20px;">
+            <input type="text" class="form-control" name="search"  placeholder="Search for..." >
+           </div >
+            <div>
+            	<span class="input-group-btn">
+              <button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/articles">Go!</button>
+            	</span>
+            </div>
+          </div>
+      </form>
+	</div>
 </div>
 
 #if(count(articles) > 0) {
@@ -26,7 +39,7 @@
 			
 			<p class="card-text">#(article.snippet)</p>
 
-			<h5>Published<a href="/admin/user/#(article.authorName)" style="color:grey">#(article.authorName)</a>, the #(article.creationDate)</h5>
+			<h5>Published by <a href="/admin/user/#(article.authorName)" style="color:grey">#(article.authorName)</a>, the #(article.creationDate)</h5>
 
 			<h6>Tags :#for(tag in article.tagsNames) { #(tag) }</h6>
 			
@@ -45,6 +58,10 @@
 } else { 
 	<h2 align="center">There is no article in the database</h2>
 }
+
+<br>
+<br>
+
 
 <!-- Pagination -->
 <ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >

@@ -5,19 +5,31 @@
 <br>
 <br>
 
-<h1 align="center">#(title)</h1>
+<h1 align="center">#(pageTitle)</h1>
 
 <br>
 <br>
 
-
-
-
-<div>
+<div class="row justify-content-between">
 	<form>
-		<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/tags/create">New tag</button>
-	</form>
-</div>
+	<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/tags/create">New tag</button>	</form>
+
+	<form>
+        <div class="row form-group justify-content-around">
+           <div style="margin-right: 20px;">
+            <input type="text" class="form-control" name="search"  placeholder="Search for..." >
+           </div >
+            <div>
+            	<span class="input-group-btn">
+              <button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/tags">Go!</button>
+            	</span>
+            </div>
+          </div>
+      </form>
+	</div>
+
+
+
 
 
 <div>
@@ -54,7 +66,21 @@
 	}
 
 
-	<br />
+	<br>
+	<br>
+
+
+<!-- Pagination -->
+<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
+  <li class="page-item #if(newerPagePath == nil) {disabled}">
+    <a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
+  </li>
+  <li class="page-item  #if(olderPagePath == nil) {disabled}">
+    <a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
+  </li>
+</ul>
+
+<br />
 
 </div>
 
