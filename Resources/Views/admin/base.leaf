@@ -54,6 +54,10 @@
           <li class="nav-item #if(title == "Users") { active }">
             <a href="/admin/users" class="nav-link">Users</a>
           </li>
+
+          <li class="nav-item #if(title == "Parameters") { active }">
+            <a href="/admin/parameters" class="nav-link">Parameters</a>
+          </li>
           
       </ul>
 

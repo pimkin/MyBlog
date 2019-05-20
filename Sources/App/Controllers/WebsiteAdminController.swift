@@ -44,6 +44,10 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.get("users", "register", use: registerHandler)
         adminRoutes.post(AdminRegisterData.self, at:"users", "register", use: registerPostHandler)
         
+        // parameters route
+        adminRoutes.get("parameters", use: getParametersHandler)
+        adminRoutes.post(AdminParametersData.self, at:"parameters", use: parametersPostHandler)
+        
         // profilePictures routes
         //        adminRoutes.get("users", User.parameter, "profilePicture", use: getUsersProfilePictureHandler)
         //        adminRoutes.get("users", User.parameter, "addProfilePicture", use: addProfilePictureHandler)
@@ -502,6 +506,22 @@ struct WebsiteAdminController: RouteCollection {
         }
     }
     
+    // Parameters routes
+    
+    func getParametersHandler(_ req: Request) throws -> Future<View> {
+        
+        let parametersManager = BlogParametersManager.shared
+        
+        let context = AdminParametersContext(tabTitle: "MyBlog>Admin Parameters",
+                                             pageTitle: "MyBlog parameters",
+                                            blogName: parametersManager.blogName,
+                                             articlesPerPage: parametersManager.articlesPerName)
+        return try req.view().render("admin/parameters", context)
+    }
+    
+    func parametersPostHandler(_ req: Request, data: AdminParametersData) throws -> Future<Response> {
+        return Future.done(on: req).transform(to: req.redirect(to: "/admin/"))
+    }
     
     
 }
@@ -581,8 +601,8 @@ struct AdminUserContext: Encodable {
 struct AdminUserData: Content {
     let name: String
     let username: String
-    let password: String
 }
+
 
 struct ImageUploadData: Content {
     var picture: Data
@@ -618,5 +638,19 @@ extension AdminRegisterData: Validatable, Reflectable {
         }
         return validations
     }
+}
+
+// struct Parameters
+
+struct AdminParametersContext: Encodable {
+    let tabTitle: String
+    let pageTitle: String
+    let blogName: String
+    let articlesPerPage: Int
+}
+
+struct AdminParametersData: Content {
+    let name: String
+    let articlesPerPage: Int
 }
 
