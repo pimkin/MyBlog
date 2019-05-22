@@ -48,6 +48,10 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.get("parameters", use: getParametersHandler)
         adminRoutes.post(AdminParametersData.self, at:"parameters", use: parametersPostHandler)
         
+        // images routes
+        //adminRoutes.get("Images", String.parameter, use: getImageHandler)
+        adminRoutes.post(ImageUploadData.self, at:"Images", use: uploadImagePostHandler)
+        
         // profilePictures routes
         //        adminRoutes.get("users", User.parameter, "profilePicture", use: getUsersProfilePictureHandler)
         //        adminRoutes.get("users", User.parameter, "addProfilePicture", use: addProfilePictureHandler)
@@ -75,7 +79,7 @@ struct WebsiteAdminController: RouteCollection {
                 orGroup.filter(\.title ~~ term)
             }
             
-            }.range(paginator.rangePlusOne).all()
+            }.range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
@@ -112,7 +116,7 @@ struct WebsiteAdminController: RouteCollection {
                 orGroup.filter(\.title ~~ term)
             }
             
-            }.range(paginator.rangePlusOne).all()
+            }.range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
@@ -424,6 +428,41 @@ struct WebsiteAdminController: RouteCollection {
         }
     }
     
+    
+    // MARK: - Images Routes
+    
+//    // Route to get an image (the filename is in the url)
+//    func getImageHandler(_ req: Request) throws -> Future<Response> {
+//        let filename = try req.parameters.next(String.self)
+//        let workPath = DirectoryConfig.detect().workDir
+//        let imagePath = workPath + "Images/" + filename
+//        
+//        return try req.streamFile(at: imagePath)
+//    }
+    
+    func uploadImagePostHandler(_ req: Request, data: ImageUploadData) throws -> ImageLocation {
+        
+        let fileData = data.image.data
+        let user = try req.requireAuthenticated(User.self)
+        
+        let filename = try "\(user.requireID())-\(UUID().uuidString).png"
+        let workPath = DirectoryConfig.detect().workDir
+        let imagePath = "Images/" + filename
+        let path = workPath + imagePath
+        
+        FileManager().createFile(atPath: path,
+                                 contents: fileData,
+                                 attributes: nil)
+        
+        let baseURL = req.http.url.baseURL
+        
+        // À voir si ça marche avec une vraie URL sur un serveur
+        // En test sur mon ordi
+        let location = baseURL?.appendingPathComponent(imagePath).path ?? "/" + imagePath
+        return ImageLocation(location: location)
+    }
+        
+    
     /*
      func getUsersProfilePictureHandler(_ req: Request) throws -> Future<Response> {
      return try req.parameters.next(User.self).flatMap(to: Response.self) { user in
@@ -461,7 +500,7 @@ struct WebsiteAdminController: RouteCollection {
      }
      */
     
-    // MARK: Register route
+    // MARK: - Register route
     
     func registerHandler(_ req: Request) throws -> Future<View> {
         
@@ -500,13 +539,29 @@ struct WebsiteAdminController: RouteCollection {
         let user = User(name: data.name,
                         username: data.username,
                         password: hashedPassword)
+        
+        
         return user.save(on: req).map(to: Response.self) { user in
             try req.authenticateSession(user)
+            
+            // Create User Directory in Images to store user images
+            
+            do {
+                let uuid = try user.requireID()
+                let workPath = DirectoryConfig.detect().workDir
+                let userImagePath = workPath + "Images/" + "\(uuid)"
+                try FileManager().createDirectory(atPath: userImagePath,
+                                          withIntermediateDirectories: false,
+                                          attributes: nil)
+            } catch {
+                fatalError("Can't create user Image folder")
+            }
+            
             return req.redirect(to: "/admin/users")
         }
     }
     
-    // Parameters routes
+    // MARK: - Parameters routes
     
     func getParametersHandler(_ req: Request) throws -> Future<View> {
         
@@ -605,7 +660,11 @@ struct AdminUserData: Content {
 
 
 struct ImageUploadData: Content {
-    var picture: Data
+    var image: File
+}
+
+struct ImageLocation: Content {
+    let location: String
 }
 
 // MARK: - Register structs
@@ -653,4 +712,3 @@ struct AdminParametersData: Content {
     let name: String
     let articlesPerPage: Int
 }
-
