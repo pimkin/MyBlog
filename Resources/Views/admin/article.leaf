@@ -34,8 +34,8 @@
 
 <div class="form-group">
   <label for="content">Content</label>
-  #// <textarea class="form-control" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
-  <textarea class="form-control" rows="20" id="myTextarea" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
+  <textarea class="form-control tinymce" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
+  #// <textarea class="form-control" rows="20" id="myTextarea" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
 
 </div>
 
@@ -69,54 +69,10 @@
 <br>
 <br>
 
-<!-- javascript -->
-  <script type="text/javascript" src="/js/jquery-3.4.0.min.js"></script>
+
+  <!-- javascript -->
   <script type="text/javascript" src="/plugin/tinymce/tinymce.min.js"></script>
   <script type="text/javascript" src="/plugin/tinymce/init-tinymce.js"></script>
-
-
-  <script>
-    tinymce.init({
-    selector: '#myTextarea',
-    plugins: 'image code',
-    toolbar: 'undo redo | image code',
-    
-    // without images_upload_url set, Upload tab won't show up
-    images_upload_url: 'upload_url',
-    
-    // override default upload handler to simulate successful upload
-    images_upload_handler: function (blobInfo, success, failure) {
-        var xhr, formData;
-      
-        xhr = new XMLHttpRequest();
-        xhr.withCredentials = false;
-        xhr.open('POST', '/admin/Images');
-      
-        xhr.onload = function() {
-            var json;
-        
-            if (xhr.status != 200) {
-                failure('HTTP Error: ' + xhr.status);
-                return;
-            \}
-        
-            json = JSON.parse(xhr.responseText);
-        
-            if (!json || typeof json.location != 'string') {
-                failure('Invalid JSON: ' + xhr.responseText);
-                return;
-            \}
-        
-            success(json.location);
-        \};
-      
-        formData = new FormData();
-        formData.append('image', blobInfo.blob(), blobInfo.filename());
-      
-        xhr.send(formData);
-    \},
-\});
-    </script>
 
  
 }
