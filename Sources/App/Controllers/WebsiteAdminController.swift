@@ -454,12 +454,12 @@ struct WebsiteAdminController: RouteCollection {
                                  contents: fileData,
                                  attributes: nil)
         
-        let baseURL = req.http.url.baseURL
+        //let baseURL = req.http.url.baseURL
         
         // À voir si ça marche avec une vraie URL sur un serveur
         // En test sur mon ordi
-        let location = baseURL?.appendingPathComponent(imagePath).path ?? "/" + imagePath
-        return ImageLocation(location: location)
+        //let location = baseURL?.appendingPathComponent(imagePath).path ?? "/" + imagePath
+        return ImageLocation(location: "/" + imagePath)
     }
         
     
