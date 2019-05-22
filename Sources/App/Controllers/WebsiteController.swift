@@ -31,6 +31,8 @@ final class WebsiteController: RouteCollection {
         
         authSessRoutes.get("logout", use: logoutHandler)
         
+        authSessRoutes.get("Images", String.parameter, use: getImageHandler)
+
         // authSessRoutes.get("register", use: registerHandler)
         // authSessRoutes.post(RegisterData.self, at: "register", use: registerPostHandler)
         
@@ -53,7 +55,7 @@ final class WebsiteController: RouteCollection {
             if let searchTerm = searchQuery {
                 and.filter(\.title ~~ searchTerm)
             }}
-            .range(paginator.rangePlusOne).all()
+            .range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
         
         return try makeView(on: req, with: articlesFuture, and: paginator)
     }
@@ -77,7 +79,7 @@ final class WebsiteController: RouteCollection {
             if let searchTerm = searchQuery {
                 and.filter(\.title ~~ searchTerm)
             }}
-            .range(paginator.rangePlusOne).all()
+            .range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
         
         return try makeView(on: req, with: articlesFuture, and: paginator)
     }
@@ -134,7 +136,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: 1,
                                       forType: .tag(tagName: tag.name))
             
-            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).all()
+            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
                 
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -154,7 +156,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: pageNumber,
                                       forType: .tag(tagName: tag.name))
             
-            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).all()
+            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -175,7 +177,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: 1,
                                       forType: .user(username: user.username))
             
-            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).all()
+            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -195,7 +197,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: pageNumber,
                                       forType: .user(username: user.username))
             
-            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).all()
+            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -309,7 +311,18 @@ final class WebsiteController: RouteCollection {
         }
     }
     
-    // MARK: construct methods
+    // MARK: - Image Route
+    
+    // Route to get an image (the filename is in the url)
+    func getImageHandler(_ req: Request) throws -> Future<Response> {
+        let filename = try req.parameters.next(String.self)
+        let workPath = DirectoryConfig.detect().workDir
+        let imagePath = workPath + "Images/" + filename
+        
+        return try req.streamFile(at: imagePath)
+    }
+    
+    // MARK: - construct methods
     
     func makeView(on req: Request, with articlesFuture: Future<[Article]>, and paginator: Paginator) throws -> Future<View> {
         
