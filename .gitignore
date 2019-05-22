@@ -4,4 +4,5 @@ xcuserdata
 *.xcodeproj
 DerivedData/
 .DS_Store
-ProfilePictures/
+ProfilePictures/*
+Images/*

@@ -10,7 +10,8 @@ tinymce.init({
 	
 	/* width and height of the editor */
 	/* width: "100%",
-	/* height: 300,
+	/* height: 300 ,
+	
 	
 	/* display statusbar */
 	statubar: true,
@@ -56,5 +57,43 @@ tinymce.init({
 			{title: "Right", icon: "alignright", format: "alignright"},
 			{title: "Justify", icon: "alignjustify", format: "alignjustify"}
 		]}
-	]
+	],
+
+	// without images_upload_url set, Upload tab won't show up
+    images_upload_url: 'upload_url',
+    
+    // override default upload handler to simulate successful upload
+    images_upload_handler: function (blobInfo, success, failure) {
+        var xhr, formData;
+      
+        xhr = new XMLHttpRequest();
+        xhr.withCredentials = false;
+        xhr.open('POST', '/admin/Images');
+      
+        xhr.onload = function() {
+            var json;
+        
+            if (xhr.status != 200) {
+                failure('HTTP Error: ' + xhr.status);
+                return;
+            }
+        
+            json = JSON.parse(xhr.responseText);
+        
+            if (!json || typeof json.location != 'string') {
+                failure('Invalid JSON: ' + xhr.responseText);
+                return;
+            }
+        
+            success(json.location);
+        };
+      
+        formData = new FormData();
+        formData.append('image', blobInfo.blob(), blobInfo.filename());
+      
+        xhr.send(formData);
+    },
+
+	/* for image */
+	convert_urls: false
 });
