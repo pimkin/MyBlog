@@ -20,9 +20,13 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.get("articles", "page", Int.parameter, use: allArticlesPageHandler)
         adminRoutes.get("articles", "create", use: createArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", "create", use: createArticlePostHandler)
+        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createFromTxt", use: createArticleFromTxtHandler)
+        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createAllFromTxt", use: createAllArticlesFromTxtHandler)
         adminRoutes.get("articles", Article.parameter, "edit", use: editArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", Article.parameter, "edit", use: editArticlePostHandler)
         adminRoutes.post("articles", Article.parameter, "delete", use: deleteArticlePostHandler)
+        adminRoutes.get("articles", Article.parameter, "download", use: downloadArticleHandler)
+        adminRoutes.get("articles", "download", use: downloadAllArticlesHandler)
         
         // tags routes
         adminRoutes.get("tags", use: allTagsHandler)
@@ -172,6 +176,105 @@ struct WebsiteAdminController: RouteCollection {
         }
     }
     
+    func createArticleFromTxtHandler(_ req: Request, fileData: AdminTextArticleData) throws -> Future<Response> {
+        
+        let txtData = fileData.file.data
+        guard var articleTxt = String(data: txtData, encoding: .utf8) else {
+            throw Abort(HTTPResponseStatus.internalServerError)
+        }
+        
+        articleTxt = articleTxt.replacingOccurrences(of: "\r", with: "")
+        articleTxt = articleTxt.replacingOccurrences(of: "\n", with: "")
+        
+        let identifiers = ["--content--", "--snippet--", "--slugURL--", "--title--"]
+        var articleDictionary: [String: String] = [String: String]()
+        for identifier in identifiers {
+            let components = articleTxt.components(separatedBy: identifier)
+            if let restOfComponents = components.first,
+                let component = components.last {
+                articleTxt = restOfComponents
+                articleDictionary[identifier] = component
+            }
+        }
+        
+        let user = try req.requireAuthenticated(User.self)
+        
+        guard let title = articleDictionary["--title--"],
+                let slugURL = articleDictionary["--slugURL--"],
+                let snippet = articleDictionary["--snippet--"],
+            let content = articleDictionary["--content--"] else {
+                throw Abort(.internalServerError)
+        }
+        return Article(title: title,
+                       slugURL: slugURL,
+                       content: content,
+                       snippet: snippet,
+                       authorID: try user.requireID(),
+                       creationDate: Date(),
+                       published: false)
+            .save(on: req).map(to: Response.self) { article in
+                guard let articleID = article.id else {
+                    throw Abort(.internalServerError)
+                }
+            
+                return req.redirect(to: "/admin/articles/\(articleID)/edit")
+        }
+    }
+    
+    func createAllArticlesFromTxtHandler(req: Request, fileTextData: AdminTextArticleData) throws -> Future<Response> {
+        
+        let txtData = fileTextData.file.data
+        guard var text = String(data: txtData, encoding: .utf8) else {
+            throw Abort(.internalServerError)
+        }
+        
+        text = text.replacingOccurrences(of: "\r", with: "")
+        text = text.replacingOccurrences(of: "\n", with: "")
+        
+        let articleIdentifier = "----article----"
+        var articles = text.components(separatedBy: articleIdentifier)
+        articles = articles.filter { article -> Bool in
+            return article != ""
+        }
+        var articlesFuture = [Future<Article>]()
+        
+        let identifiers = ["--content--", "--snippet--", "--slugURL--", "--title--"]
+        var articleDictionary: [String: String] = [String: String]()
+        for article in articles {
+            var newArticle: String = article
+            for identifier in identifiers {
+                let articleComponents = newArticle.components(separatedBy: identifier)
+                guard let restOfArticle = articleComponents.first,
+                    let articleComponent = articleComponents.last else {
+                        throw Abort(.internalServerError)
+                }
+                newArticle = restOfArticle
+                articleDictionary[identifier] = articleComponent
+            }
+            
+            guard let title = articleDictionary["--title--"],
+                let slugURL = articleDictionary["--slugURL--"],
+                let snippet = articleDictionary["--snippet--"],
+                let content = articleDictionary["--content--"] else {
+                    throw Abort(.internalServerError)
+            }
+            
+            let user = try req.requireAuthenticated(User.self)
+
+            let newArticleFuture = Article(title: title,
+                                           slugURL: slugURL,
+                                           content: content,
+                                           snippet: snippet,
+                                           authorID: try user.requireID(),
+                                           creationDate: Date(),
+                                           published: false).save(on: req)
+            articlesFuture.append(newArticleFuture)
+        }
+        
+        return articlesFuture.flatten(on: req).transform(to: req.redirect(to: "/admin/articles"))
+        
+    }
+    
     func editArticleHandler(_ req: Request) throws -> Future<View> {
         let articleFuture = try req.parameters.next(Article.self)
         let tagsFuture = Tag.query(on: req).all()
@@ -217,10 +320,44 @@ struct WebsiteAdminController: RouteCollection {
     }
     
     func deleteArticlePostHandler(_ req: Request) throws -> Future<Response> {
-        // Obligé de mettre /admin/articles plutôt que articles
-        // Peut-être parce que la requete vient de la page admin/articles et se recharge simplement,
-        // Du coup ça bug
         return try req.parameters.next(Article.self).delete(on: req).transform(to: req.redirect(to: "/admin/articles"))
+    }
+    
+    func downloadArticleHandler(_ req: Request) throws -> Future<Response> {
+        let article = try req.parameters.next(Article.self)
+        return article.map(to: Response.self) { article in
+            let filename = article.slugURL + ".txt"
+            var textFile = "--title--\r\n" + "\(article.title)\r\n"
+            textFile = textFile + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
+            textFile = textFile + "--snippet--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--content--\r\n" + "\(article.content)"
+            
+            
+            let data = textFile.convertToData()
+            let response = req.response(data, as: .plainText)
+            response.http.headers.add(name: .contentDisposition, value: "attachment; filename=\"\(filename)\"")
+            return response
+        }
+    }
+    
+    func downloadAllArticlesHandler(_ req: Request) throws -> Future<Response> {
+        
+        return Article.query(on: req).all().map(to: Response.self) { articles in
+            var resultText = ""
+            for article in articles {
+                var text = "----article----\r\n"
+                text = text + "--title--\r\n" + "\(article.title)\r\n"
+                text = text + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
+                text = text + "--snippet--\r\n" + "\(article.snippet)\r\n"
+                text = text + "--content--\r\n" + "\(article.content)\r\n"
+                resultText = resultText + text
+            }
+            
+            let data = resultText.convertToData()
+            let response = req.response(data, as: .plainText)
+            response.http.headers.add(name: .contentDisposition, value: "attachment; filename=\"articles.txt\"")
+            return response
+        }
     }
     
     // MARK:- Tag Routes
@@ -614,6 +751,10 @@ struct AdminArticleData: Content {
     var snippet: String
     var tag: String
     var published: Bool?
+}
+
+struct AdminTextArticleData: Content {
+    let file: File
 }
 
 // MARK: - Struct Tags
