@@ -177,16 +177,36 @@ struct WebsiteAdminController: RouteCollection {
     func createArticleFromTxtHandler(_ req: Request, fileData: AdminTextArticleData) throws -> Future<Response> {
         
         let txtData = fileData.file.data
-        guard let articleTxt = String(data: txtData, encoding: .utf8) else {
+        guard var articleTxt = String(data: txtData, encoding: .utf8) else {
             throw Abort(HTTPResponseStatus.internalServerError)
+        }
+        
+        articleTxt = articleTxt.replacingOccurrences(of: "\r", with: "")
+        articleTxt = articleTxt.replacingOccurrences(of: "\n", with: "")
+        
+        let identifiers = ["--content--", "--snippet--", "--slugURL--", "--title--"]
+        var articleDictionary: [String: String] = [String: String]()
+        for identifier in identifiers {
+            let components = articleTxt.components(separatedBy: identifier)
+            if let restOfComponents = components.first,
+                let component = components.last {
+                articleTxt = restOfComponents
+                articleDictionary[identifier] = component
+            }
         }
         
         let user = try req.requireAuthenticated(User.self)
         
-        return Article(title: "a title",
-                       slugURL: "a_slugURL",
-                       content: articleTxt,
-                       snippet: "a snippet",
+        guard let title = articleDictionary["--title--"],
+                let slugURL = articleDictionary["--slugURL--"],
+                let snippet = articleDictionary["--snippet--"],
+            let content = articleDictionary["--content--"] else {
+                throw Abort(.internalServerError)
+        }
+        return Article(title: title,
+                       slugURL: slugURL,
+                       content: content,
+                       snippet: snippet,
                        authorID: try user.requireID(),
                        creationDate: Date(),
                        published: false)
@@ -251,10 +271,10 @@ struct WebsiteAdminController: RouteCollection {
         let article = try req.parameters.next(Article.self)
         return article.map(to: Response.self) { article in
             let filename = article.slugURL + ".txt"
-            var textFile = "<p>Title : \(article.title)</p>\r\n"
-            textFile = textFile + "<p>SlugURL : \(article.slugURL)</p>\r\n"
-            textFile = textFile + "<p>Snippet : \(article.snippet)</p>\r\n"
-            textFile = textFile + "<p>Content : </p>" + "\n" + "\(article.content)"
+            var textFile = "--title--\r\n" + "\(article.title)\r\n"
+            textFile = textFile + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
+            textFile = textFile + "--snippet--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--content--\r\n" + "\(article.content)"
             
             
             let data = textFile.convertToData()
