@@ -46,6 +46,7 @@
 			<div>
 				<form>
 						#// <button type="submit" formmethod="GET" formaction="/#(article.slugURL)">Show</button>
+						<button class="btn btn-primary btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/download">Download .txt</button>
 						<button class="btn btn-warning btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/edit">Edit</button>
 						<button class="btn btn-danger btn-sm" type="submit" formmethod="POST" formaction="/admin/articles/#(article.id)/delete">Delete</button>
 				</form>

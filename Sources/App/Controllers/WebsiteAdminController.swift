@@ -23,6 +23,7 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.get("articles", Article.parameter, "edit", use: editArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", Article.parameter, "edit", use: editArticlePostHandler)
         adminRoutes.post("articles", Article.parameter, "delete", use: deleteArticlePostHandler)
+        adminRoutes.get("articles", Article.parameter, "download", use: downloadArticleHandler)
         
         // tags routes
         adminRoutes.get("tags", use: allTagsHandler)
@@ -217,10 +218,23 @@ struct WebsiteAdminController: RouteCollection {
     }
     
     func deleteArticlePostHandler(_ req: Request) throws -> Future<Response> {
-        // Obligé de mettre /admin/articles plutôt que articles
-        // Peut-être parce que la requete vient de la page admin/articles et se recharge simplement,
-        // Du coup ça bug
         return try req.parameters.next(Article.self).delete(on: req).transform(to: req.redirect(to: "/admin/articles"))
+    }
+    
+    func downloadArticleHandler(_ req: Request) throws -> Future<Response> {
+        let article = try req.parameters.next(Article.self)
+        return article.map(to: Response.self) { article in
+            let filename = article.slugURL + ".txt"
+            var textFile = article.title + "\n\n"
+            textFile = textFile + article.slugURL + "\n\n"
+            textFile = textFile + article.content + "\n\n"
+            textFile = textFile + article.snippet
+            
+            let data = textFile.convertToData()
+            let response = req.response(data, as: .plainText)
+            response.http.headers.add(name: .contentDisposition, value: "attachment; filename=\"\(filename)\"")
+            return response
+        }
     }
     
     // MARK:- Tag Routes
