@@ -20,6 +20,7 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.get("articles", "page", Int.parameter, use: allArticlesPageHandler)
         adminRoutes.get("articles", "create", use: createArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", "create", use: createArticlePostHandler)
+        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createFromTxt", use: createArticleFromTxtHandler)
         adminRoutes.get("articles", Article.parameter, "edit", use: editArticleHandler)
         adminRoutes.post(AdminArticleData.self, at:"articles", Article.parameter, "edit", use: editArticlePostHandler)
         adminRoutes.post("articles", Article.parameter, "delete", use: deleteArticlePostHandler)
@@ -173,6 +174,31 @@ struct WebsiteAdminController: RouteCollection {
         }
     }
     
+    func createArticleFromTxtHandler(_ req: Request, fileData: AdminTextArticleData) throws -> Future<Response> {
+        
+        let txtData = fileData.file.data
+        guard let articleTxt = String(data: txtData, encoding: .utf8) else {
+            throw Abort(HTTPResponseStatus.internalServerError)
+        }
+        
+        let user = try req.requireAuthenticated(User.self)
+        
+        return Article(title: "a title",
+                       slugURL: "a_slugURL",
+                       content: articleTxt,
+                       snippet: "a snippet",
+                       authorID: try user.requireID(),
+                       creationDate: Date(),
+                       published: false)
+            .save(on: req).map(to: Response.self) { article in
+                guard let articleID = article.id else {
+                    throw Abort(.internalServerError)
+                }
+            
+                return req.redirect(to: "/admin/articles/\(articleID)/edit")
+        }
+    }
+    
     func editArticleHandler(_ req: Request) throws -> Future<View> {
         let articleFuture = try req.parameters.next(Article.self)
         let tagsFuture = Tag.query(on: req).all()
@@ -225,10 +251,11 @@ struct WebsiteAdminController: RouteCollection {
         let article = try req.parameters.next(Article.self)
         return article.map(to: Response.self) { article in
             let filename = article.slugURL + ".txt"
-            var textFile = article.title + "\n\n"
-            textFile = textFile + article.slugURL + "\n\n"
-            textFile = textFile + article.content + "\n\n"
-            textFile = textFile + article.snippet
+            var textFile = "<p>Title : \(article.title)</p>\r\n"
+            textFile = textFile + "<p>SlugURL : \(article.slugURL)</p>\r\n"
+            textFile = textFile + "<p>Snippet : \(article.snippet)</p>\r\n"
+            textFile = textFile + "<p>Content : </p>" + "\n" + "\(article.content)"
+            
             
             let data = textFile.convertToData()
             let response = req.response(data, as: .plainText)
@@ -628,6 +655,10 @@ struct AdminArticleData: Content {
     var snippet: String
     var tag: String
     var published: Bool?
+}
+
+struct AdminTextArticleData: Content {
+    let file: File
 }
 
 // MARK: - Struct Tags
