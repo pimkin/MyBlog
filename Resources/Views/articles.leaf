@@ -3,18 +3,25 @@
 <!-- Blog Post -->
 #for(article in articles) {
 
-<div class="card mb-4">
-  #// <img class="card-img-top" src="http://placehold.it/750x300" alt="Card image cap">
+
+ <div class="card mb-4">
+  <div class="card-header">
+      <h4 class="card-title">#(article.title)</h4>
+      <h6>
+        <a href="/user/#(article.authorName)">#(article.authorName)</a> / 
+        #(article.creationDate) /#for(tag in article.tagsNames) { <a href="/tag/#(tag)">#(tag)</a>} </h6>
+
+  </div>
+  <img class="card-img-top" src="http://placehold.it/750x300" alt="Card image cap">
   <div class="card-body">
-    <h2 class="card-title">#(article.title)</h2>
-    <p class="card-text">#(article.snippet)</p>
-    <a href="#(article.slugURL)" class="btn btn-primary">Lire &rarr;</a>
+    
+    <p class="card-text">#(article.snippet) <a href="#(article.slugURL)">go...</a></p>
+    
   </div>
-  <div class="card-footer text-muted">
-    Posted on #(article.creationDate) by
-    <a href="/user/#(article.authorName)">#(article.authorName)</a>
-  </div>
+  
 </div>
+
+
 }
 
 <!-- Pagination -->
