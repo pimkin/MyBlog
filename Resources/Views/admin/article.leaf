@@ -18,30 +18,25 @@
     <input type="text" name="slugURL" class="form-control" id="slugURL" value="#(article.slugURL)" placeholder="Enter a slugURL for your article"/>
   </div>
 
+
+
   <div class="form-group">
     <label for="tagSelection">Tag</label>
-
-    <select class="custom-select" id="tagSelection" name="tag">
-
-     #// <option selected>Select a tag</option>
-     #for(tag in tags) {
-     <option value="#(tag.name)">#(tag.name)</option>
-   } 
- </select>
-</div>
-
-
-
-<div class="form-group">
-  <label for="content">Content</label>
-  <textarea class="form-control tinymce" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
-  #// <textarea class="form-control" rows="20" id="myTextarea" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
-
-</div>
+    <div>
+      #for(tag in tags) {
+        <label><input type="checkbox" aria-label="Checkbox for following text input" name="tags[]" value="#(tag.name)"> #(tag.name) </label>
+      }
+    </div>
+  </div>
 
 <div class="form-group">
   <label for="snippet">Snippet</label>
   <textarea class="form-control " id="snippet" name="snippet" rows="2" placeholder="Enter the snippet of your article" >#(article.snippet)</textarea>
+</div>
+
+<div class="form-group">
+  <label for="content">Content</label>
+  <textarea class="form-control tinymce" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
 </div>
 
 
@@ -59,22 +54,17 @@
   }
   </div>
 
-  
+
 </div>
 
 </form>
-
-#// <textarea id="myTextarea">myTextarea example</textarea>
-
-<br>
-<br>
 
 
   <!-- javascript -->
   <script type="text/javascript" src="/plugin/tinymce/tinymce.min.js"></script>
   <script type="text/javascript" src="/plugin/tinymce/init-tinymce.js"></script>
 
- 
+
 }
 
 
