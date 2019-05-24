@@ -18,7 +18,7 @@ final class RouteAdminArticles {
                 orGroup.filter(\.title ~~ term)
             }
             
-            }.range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            }.range(paginator.rangePlusOne).sort(\.created, .descending).all()
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
@@ -57,7 +57,7 @@ final class RouteAdminArticles {
                 orGroup.filter(\.title ~~ term)
             }
             
-            }.range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            }.range(paginator.rangePlusOne).sort(\.created, .descending).all()
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
@@ -100,13 +100,21 @@ final class RouteAdminArticles {
     //  -> post request for create a page
     func createArticlePostHandler(_ req: Request, articleData: AdminArticleData) throws -> Future<Response> {
         let author = try req.requireAuthenticated(User.self)
+        
+        var published: Date?
+        if articleData.published != nil {
+            published = Date()
+        }
+        
         let article = Article(title: articleData.title,
                               slugURL: articleData.slugURL,
                               content: articleData.content,
                               snippet: articleData.snippet,
                               authorID: try author.requireID(),
-                              creationDate: Date(),
-                              published: articleData.published ?? false)
+                              created: Date(),
+                              edited: nil,
+                              published: published,
+                              mainPicture: articleData.mainPicture)
         
         return article.save(on: req).flatMap(to: Response.self) { article in
             
@@ -193,6 +201,11 @@ final class RouteAdminArticles {
             var textFile = "--title--\r\n" + "\(article.title)\r\n"
             textFile = textFile + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
             textFile = textFile + "--snippet--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--author--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--created--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--edited--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--published--\r\n" + "\(article.snippet)\r\n"
+            textFile = textFile + "--mainPicture--\r\n" + "\(article.snippet)\r\n"
             textFile = textFile + "--content--\r\n" + "\(article.content)"
             
             
@@ -209,12 +222,16 @@ final class RouteAdminArticles {
         return Article.query(on: req).all().map(to: Response.self) { articles in
             var resultText = ""
             for article in articles {
-                var text = "----article----\r\n"
-                text = text + "--title--\r\n" + "\(article.title)\r\n"
-                text = text + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
-                text = text + "--snippet--\r\n" + "\(article.snippet)\r\n"
-                text = text + "--content--\r\n" + "\(article.content)\r\n"
-                resultText = resultText + text
+                var textFile = "--title--\r\n" + "\(article.title)\r\n"
+                textFile = textFile + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
+                textFile = textFile + "--snippet--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--author--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--created--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--edited--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--published--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--mainPicture--\r\n" + "\(article.snippet)\r\n"
+                textFile = textFile + "--content--\r\n" + "\(article.content)"
+                resultText = resultText + textFile
             }
             
             let data = resultText.convertToData()
@@ -235,7 +252,7 @@ final class RouteAdminArticles {
         articleTxt = articleTxt.replacingOccurrences(of: "\r", with: "")
         articleTxt = articleTxt.replacingOccurrences(of: "\n", with: "")
         
-        let identifiers = ["--content--", "--snippet--", "--slugURL--", "--title--"]
+        let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
         var articleDictionary: [String: String] = [String: String]()
         for identifier in identifiers {
             let components = articleTxt.components(separatedBy: identifier)
@@ -246,28 +263,41 @@ final class RouteAdminArticles {
             }
         }
         
-        let user = try req.requireAuthenticated(User.self)
-        
         guard let title = articleDictionary["--title--"],
             let slugURL = articleDictionary["--slugURL--"],
             let snippet = articleDictionary["--snippet--"],
+            let author = articleDictionary["--author--"],
+            let created = articleDictionary["--created--"],
+            let mainPicture = articleDictionary["--mainPicture--"],
             let content = articleDictionary["--content--"] else {
-                throw Abort(.internalServerError)
+                return req.redirect(to: "/admin/articles/")
         }
-        return Article(title: title,
-                       slugURL: slugURL,
-                       content: content,
-                       snippet: snippet,
-                       authorID: try user.requireID(),
-                       creationDate: Date(),
-                       published: false)
+        
+        var published: Date?
+        if let publishedDateString = articleDictionary["--published--"] {
+            published =
+        }
+        var edited: Date? = articleDictionary["--edited--"]
+            
+        let user = try req.requireAuthenticated(User.self)
+            
+        let newArticleFuture = Article(title: title,
+                                           slugURL: slugURL,
+                                           content: content,
+                                           snippet: snippet,
+                                           authorID: try user.requireID(),
+                                           created: created,
+                                           edited: edited,
+                                           published: published,
+                                           mainPicture: mainPicture).save(on: req)
             .save(on: req).map(to: Response.self) { article in
                 guard let articleID = article.id else {
                     throw Abort(.internalServerError)
                 }
                 
                 return req.redirect(to: "/admin/articles/\(articleID)/edit")
-        }
+            }
+        } 
     }
     
     // route for blog.com/admin/articles/createAllFromTxt
@@ -281,14 +311,17 @@ final class RouteAdminArticles {
         text = text.replacingOccurrences(of: "\r", with: "")
         text = text.replacingOccurrences(of: "\n", with: "")
         
-        let articleIdentifier = "----article----"
-        var articles = text.components(separatedBy: articleIdentifier)
+        // Split txt file with separator between articles
+        let separator = Article.separator
+        var articles = text.components(separatedBy: separator)
         articles = articles.filter { article -> Bool in
             return article != ""
         }
+        
+        
         var articlesFuture = [Future<Article>]()
         
-        let identifiers = ["--content--", "--snippet--", "--slugURL--", "--title--"]
+        let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
         var articleDictionary: [String: String] = [String: String]()
         for article in articles {
             var newArticle: String = article
@@ -302,22 +335,27 @@ final class RouteAdminArticles {
                 articleDictionary[identifier] = articleComponent
             }
             
-            guard let title = articleDictionary["--title--"],
+            if let title = articleDictionary["--title--"],
                 let slugURL = articleDictionary["--slugURL--"],
                 let snippet = articleDictionary["--snippet--"],
-                let content = articleDictionary["--content--"] else {
-                    throw Abort(.internalServerError)
-            }
+                let author = articleDictionary["--author--"],
+                let created = articleDictionary["--created--"],
+                let edited = articleDictionary["--edited--"],
+                let published = articleDictionary["--published--"],
+                let mainPicture = articleDictionary["--mainPicture--"],
+                let content = articleDictionary["--content--"] {
             
-            let user = try req.requireAuthenticated(User.self)
+                let user = try req.requireAuthenticated(User.self)
             
-            let newArticleFuture = Article(title: title,
+                let newArticleFuture = Article(title: title,
                                            slugURL: slugURL,
                                            content: content,
                                            snippet: snippet,
                                            authorID: try user.requireID(),
-                                           creationDate: Date(),
-                                           published: false).save(on: req)
+                                           creationDate: created,
+                                           edited: edited,
+                                           published: published,
+                                           mainPicture: mainPicture).save(on: req)
             articlesFuture.append(newArticleFuture)
         }
         
@@ -352,6 +390,7 @@ struct AdminArticleData: Content {
     var content: String
     var snippet: String
     var tags: [String]?
+    var mainPicture: String
     var published: Bool?
 }
 

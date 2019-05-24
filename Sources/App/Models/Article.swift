@@ -3,18 +3,19 @@ import Vapor
 
 final class Article: Codable {
     
+    static let separator = "----article----"
+    static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
+    
     var id: UUID?
     var title: String
     var slugURL: String
     var snippet: String
     var content: String
     var authorID: User.ID
-    var creationDate: Date
-    var published: Bool
-    //var created: Date
-    //var edited: Date?
-    //var published: Date?
-    //var mainPicture: String
+    var created: Date
+    var edited: Date?
+    var published: Date?
+    var mainPicture: String
     
     
     init(title: String,
@@ -22,22 +23,19 @@ final class Article: Codable {
          content: String,
          snippet: String,
          authorID: User.ID,
-         creationDate: Date,
-        published: Bool
-            //created: Date
-         //published: Date?,
-         //mainPicture: String
-        ) {
+         created: Date,
+         edited: Date?,
+         published: Date?,
+         mainPicture: String) {
         self.title = title
         self.slugURL = slugURL
         self.content = content
         self.snippet = snippet
         self.authorID = authorID
-        self.creationDate = creationDate
+        self.created = created
+        self.edited = edited
         self.published = published
-        //self.created = created
-        //self.published = published
-        //self.mainPicture = mainPicture
+        self.mainPicture = mainPicture
     }
 }
 
@@ -65,12 +63,10 @@ extension Article {
         var slugURL: String
         var content: String
         var snippet: String
-        var creationDate: String
-        var published: Bool
-        //var created: String
-        //var edited: String?
-        //var published: String?
-        //var mainPicture: String?
+        var created: String
+        var edited: String?
+        var published: String?
+        var mainPicture: String?
         var authorName: String
         var tagsNames: [String]
         
@@ -86,18 +82,15 @@ extension Article {
             self.slugURL = article.slugURL
             self.content = article.content
             self.snippet = article.snippet
-            self.creationDate = dateFormatter.string(from: article.creationDate)
-            self.published = article.published
-
-            //self.created = dateFormatter.string(from: article.created)
+            self.created = dateFormatter.string(from: article.created)
             self.authorName = authorName
             self.tagsNames = tagsNames
             
-//            if let editedDate = article.edited,
-//                let publishedDate = article.published {
-//                    self.edited = dateFormatter.string(from: editedDate)
-//                    self.published = dateFormatter.string(from: publishedDate)
-//            }
+            if let editedDate = article.edited,
+                let publishedDate = article.published {
+                    self.edited = dateFormatter.string(from: editedDate)
+                    self.published = dateFormatter.string(from: publishedDate)
+            }
             
         }
     }
