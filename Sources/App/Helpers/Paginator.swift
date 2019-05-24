@@ -11,7 +11,7 @@ struct Paginator {
     
     private let _currentPage: Int
     private let _type: PaginatorType
-    private let _articlesPerPage = 3
+    private let _articlesPerPage = 8
     
     var currentPage: Int {
         return _currentPage
