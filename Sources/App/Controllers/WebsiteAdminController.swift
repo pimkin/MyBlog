@@ -16,6 +16,7 @@ struct WebsiteAdminController: RouteCollection {
         
         
         // articles routes
+        
         adminRoutes.get("articles", use: allArticlesHandler)
         adminRoutes.get("articles", "page", Int.parameter, use: allArticlesPageHandler)
         adminRoutes.get("articles", "create", use: createArticleHandler)
@@ -308,8 +309,8 @@ struct WebsiteAdminController: RouteCollection {
             article.title = articleUpdated.title
             article.content = articleUpdated.content
             article.snippet = articleUpdated.snippet
-            article.editionDate = Date()
-            article.published = articleUpdated.published ?? false
+            //article.editionDate = Date()
+            //article.published = articleUpdated.published ?? false
             
             return article.update(on: req).flatMap(to: Response.self) { article in
                 
