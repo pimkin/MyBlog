@@ -10,36 +10,46 @@ final class WebsiteController: RouteCollection {
         
         let authSessRoutes = router.grouped(User.authSessionsMiddleware())
         
+        // route blog.com/ and blog.com/page/pageNumber
+        //  -> the front page of the blog with the list of articles
         authSessRoutes.get("/", use: getIndexHandler)
         authSessRoutes.get("page", Int.parameter, use: getIndexPageHandler)
         
+        // route blog.com/articleSlugURL
+        //  -> to access an article by its slugURL
         authSessRoutes.get(String.parameter, use: getArticleHandler)
         
+        // route blog.com/tag/tagName and blog.com/tag/tagName/page/pageNumber
+        //  -> to access to the articles with the same tag
         authSessRoutes.get("tag", String.parameter, use: getTagHandler)
         authSessRoutes.get("tag", String.parameter, "page",  Int.parameter, use: getTagPageHandler)
         
+        // route blog.com/user/userName and blog.com/user/userName/page/pageNumber
+        //  -> to access to the articles from a user
         authSessRoutes.get("user", String.parameter, use: getUserHandler)
         authSessRoutes.get("user", String.parameter, "page", Int.parameter, use: getUserPageHandler)
+        
+        // route to log in and log out
+        authSessRoutes.get("login", use: getLoginHandler)
+        authSessRoutes.post(LoginData.self, at: "login", use: loginPostHandler)
+        authSessRoutes.get("logout", use: logoutHandler)
+        
+        // route to get an image saved on the server
+        //  (see the admin section for the route about uploading an image)
+        authSessRoutes.get("Images", String.parameter, use: getImageHandler)
+        
+        
         
         authSessRoutes.get("about", use: aboutHandler)
         //authSessRoutes.get("archives", use: archivesHandler)
         //authSessRoutes.get("contact", use: contactHandler)
-        
-        
-        authSessRoutes.get("login", use: getLoginHandler)
-        authSessRoutes.post(LoginData.self, at: "login", use: loginPostHandler)
-        
-        authSessRoutes.get("logout", use: logoutHandler)
-        
-        authSessRoutes.get("Images", String.parameter, use: getImageHandler)
 
-        // authSessRoutes.get("register", use: registerHandler)
-        // authSessRoutes.post(RegisterData.self, at: "register", use: registerPostHandler)
-        
     }
     
     // MARK: Index Routes
     
+    // route blog.com/
+    //  -> the front page of the blog with the list of articles
     func getIndexHandler(_ req: Request) throws -> Future<View> {
         
         let searchQuery = req.query[String.self, at:"search"]
@@ -60,6 +70,8 @@ final class WebsiteController: RouteCollection {
         return try makeView(on: req, with: articlesFuture, and: paginator)
     }
     
+    // route blog.com/page/pageNumber
+    //  -> the front page of the blog with the list of articles (pagination)
     func getIndexPageHandler(req: Request) throws -> Future<View> {
         
         let pageNumber = try req.parameters.next(Int.self)
@@ -86,7 +98,8 @@ final class WebsiteController: RouteCollection {
     
     // MARK: Article Route
 
-    
+    // route blog.com/articleSlugURL
+    //  -> to access an article by its slugURL
     func getArticleHandler(_ req: Request) throws -> Future<View> {
         let slugURL = try req.parameters.next(String.self)
         return Article.query(on: req).filter(\.slugURL == slugURL).first().flatMap(to: View.self) { article in
@@ -124,7 +137,8 @@ final class WebsiteController: RouteCollection {
     
     // MARK: Tag Routes
 
-    
+    // route blog.com/tag/tagName
+    //  -> to access to the articles with the same tag
     func getTagHandler(_ req: Request) throws -> Future<View> {
         let tagName = try req.parameters.next(String.self)
         
@@ -142,7 +156,8 @@ final class WebsiteController: RouteCollection {
         }
     }
     
-    
+    // route blog.com/tag/tagName/page/pageNumber
+    //  -> to access to the articles with the same tag (pagination)
     func getTagPageHandler(req: Request) throws -> Future<View> {
         
         let tagName = try req.parameters.next(String.self)
@@ -164,7 +179,8 @@ final class WebsiteController: RouteCollection {
     
     // MARK: User Routes
 
-    
+    // route blog.com/user/userName
+    //  -> to access to the articles from a user
     func getUserHandler(req: Request) throws -> Future<View> {
         
         let userName = try req.parameters.next(String.self)
@@ -183,7 +199,8 @@ final class WebsiteController: RouteCollection {
         }
     }
     
-    
+    // route blog.com/user/userName/page/pageNumber
+    //  -> to access to the articles from a user (pagination)
     func getUserPageHandler(req: Request) throws -> Future<View> {
         
         let userName = try req.parameters.next(String.self)
@@ -213,27 +230,27 @@ final class WebsiteController: RouteCollection {
         return try req.view().render("about", context)
     }
     
-    func archivesHandler(_ req: Request) throws -> Future<View> {
-        let user = try req.authenticated(User.self)
-        let context = ArchivesContext(user: user?.convertToPublic(),
-                                   tabTitle: "MyBlog - Archives",
-                                   pageTitle: "Archives MyBlog")
-        return try req.view().render("archives", context)
-    }
-    
-    func contactHandler(_ req: Request) throws -> Future<View> {
-        let user = try req.authenticated(User.self)
-        let context = ContactContext(user: user?.convertToPublic(),
-                                   tabTitle: "MyBlog - Contact",
-                                   pageTitle: "Contact MyBlog")
-        return try req.view().render("contact", context)
-    }
+//    func archivesHandler(_ req: Request) throws -> Future<View> {
+//        let user = try req.authenticated(User.self)
+//        let context = ArchivesContext(user: user?.convertToPublic(),
+//                                   tabTitle: "MyBlog - Archives",
+//                                   pageTitle: "Archives MyBlog")
+//        return try req.view().render("archives", context)
+//    }
+//    
+//    func contactHandler(_ req: Request) throws -> Future<View> {
+//        let user = try req.authenticated(User.self)
+//        let context = ContactContext(user: user?.convertToPublic(),
+//                                   tabTitle: "MyBlog - Contact",
+//                                   pageTitle: "Contact MyBlog")
+//        return try req.view().render("contact", context)
+//    }
     
     
     // MARK: Login/logout/register Routes
 
     
-    
+    // route to log in
     func getLoginHandler(_ req: Request) throws -> Future<View> {
         
         return Tag.query(on: req).all().flatMap(to: View.self) { tags in
@@ -248,7 +265,7 @@ final class WebsiteController: RouteCollection {
             return try req.view().render("login", context)
         }
     }
-    
+    // POST route to login
     func loginPostHandler( _ req: Request, loginData: LoginData) throws -> Future<Response> {
         return User.authenticate(username: loginData.username,
                                  password: loginData.password,
@@ -263,53 +280,14 @@ final class WebsiteController: RouteCollection {
         }
     }
     
+    // route to log out
     func logoutHandler(_ req: Request) throws -> Response {
         try req.unauthenticateSession(User.self)
         return req.redirect(to: "/")
     }
     
-    func registerHandler(_ req: Request) throws -> Future<View> {
-
-        return Tag.query(on: req).all().flatMap(to: View.self) { tags in
-            
-            let user = try req.authenticated(User.self)
-
-            var context = RegisterContext(user: user?.convertToPublic(),
-                                      tabTitle: "MyBlog - Register",
-                                      pageTitle: "Register",
-                                      tags: tags,
-                                      message: nil)
-            if let message = req.query[String.self, at: "message"] {
-                context.message = message
-            }
-        
-            return try req.view().render("register", context)
-        }
-    }
     
-    func registerPostHandler(_ req: Request, data: RegisterData) throws -> Future<Response> {
-        do {
-            try data.validate()
-        } catch (let error) {
-            let redirect: String
-            if let error = error as? ValidationError,
-                let message = error.reason.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                redirect = "/register?message=\(message)"
-            } else {
-                redirect = "/register?message=Unknown+error"
-            }
-            return req.future(req.redirect(to: redirect))
-        }
-        
-        let hashedPassword = try BCrypt.hash(data.password)
-        let user = User(name: data.name,
-                        username: data.username,
-                        password: hashedPassword)
-        return user.save(on: req).map(to: Response.self) { user in
-            try req.authenticateSession(user)
-            return req.redirect(to: "/")
-        }
-    }
+    
     
     // MARK: - Image Route
     
@@ -322,8 +300,9 @@ final class WebsiteController: RouteCollection {
         return try req.streamFile(at: imagePath)
     }
     
-    // MARK: - construct methods
     
+    // MARK: - construct methods
+    //  used by all the other route functions to display the articles
     func makeView(on req: Request, with articlesFuture: Future<[Article]>, and paginator: Paginator) throws -> Future<View> {
         
         let tagsFuture = Tag.query(on: req).all()
@@ -391,17 +370,17 @@ struct AboutContext: Encodable {
     let pageTitle: String
 }
 
-struct ArchivesContext: Encodable {
-    let user: User.Public?
-    let tabTitle: String
-    let pageTitle: String
-}
-
-struct ContactContext: Encodable {
-    let user: User.Public?
-    let tabTitle: String
-    let pageTitle: String
-}
+//struct ArchivesContext: Encodable {
+//    let user: User.Public?
+//    let tabTitle: String
+//    let pageTitle: String
+//}
+//
+//struct ContactContext: Encodable {
+//    let user: User.Public?
+//    let tabTitle: String
+//    let pageTitle: String
+//}
 
 struct LoginContext: Encodable {
     let user: User.Public?
@@ -415,33 +394,3 @@ struct LoginData: Content {
     var password: String
 }
 
-struct RegisterContext: Encodable {
-    let user: User.Public?
-    let tabTitle: String
-    let pageTitle: String
-    let tags: [Tag]
-    var message: String?
-}
-
-struct RegisterData: Content {
-    let name: String
-    let username: String
-    let password: String
-    let confirmPassword: String
-}
-
-
-extension RegisterData: Validatable, Reflectable {
-    static func validations() throws -> Validations<RegisterData> {
-        var validations = Validations(RegisterData.self)
-        try validations.add(\.name, .ascii)
-        try validations.add(\.username, .alphanumeric && .count(3...))
-        try validations.add(\.password, .count(8...))
-        validations.add("password match") { model in
-            guard model.password == model.confirmPassword else {
-                throw BasicValidationError("passwords don't match")
-            }
-        }
-        return validations
-    }
-}
