@@ -167,12 +167,21 @@ struct WebsiteAdminController: RouteCollection {
                               creationDate: Date(),
                               published: articleData.published ?? false)
         
-        let articleFuture = article.save(on: req)
-        let tagFuture = Tag.query(on: req).filter(\.name == articleData.tag).first()
-        
-        return flatMap(to: Response.self, articleFuture, tagFuture) { article, tag in
-            guard let tag = tag else { fatalError("the tag should exist") }
-            return article.tags.attach(tag, on: req).transform(to: req.redirect(to: "/admin/articles"))
+        return article.save(on: req).flatMap(to: Response.self) { article in
+            
+            var futures = [Future<ArticleTagPivot>]()
+            if let tags = articleData.tags {
+                for tag in tags {
+                    let attachTagFuture = Tag.query(on: req).filter(\.name == tag).first().flatMap(to: ArticleTagPivot.self) { futureTag in
+                        guard let futureTag = futureTag else { fatalError("the tag should exist") }
+                        
+                        return article.tags.attach(futureTag, on: req)
+                    }
+                    futures.append(attachTagFuture)
+                }
+            }
+            
+            return futures.flatten(on: req).transform(to: req.redirect(to: "/admin/articles"))
         }
     }
     
@@ -200,8 +209,8 @@ struct WebsiteAdminController: RouteCollection {
         let user = try req.requireAuthenticated(User.self)
         
         guard let title = articleDictionary["--title--"],
-                let slugURL = articleDictionary["--slugURL--"],
-                let snippet = articleDictionary["--snippet--"],
+            let slugURL = articleDictionary["--slugURL--"],
+            let snippet = articleDictionary["--snippet--"],
             let content = articleDictionary["--content--"] else {
                 throw Abort(.internalServerError)
         }
@@ -216,7 +225,7 @@ struct WebsiteAdminController: RouteCollection {
                 guard let articleID = article.id else {
                     throw Abort(.internalServerError)
                 }
-            
+                
                 return req.redirect(to: "/admin/articles/\(articleID)/edit")
         }
     }
@@ -260,7 +269,7 @@ struct WebsiteAdminController: RouteCollection {
             }
             
             let user = try req.requireAuthenticated(User.self)
-
+            
             let newArticleFuture = Article(title: title,
                                            slugURL: slugURL,
                                            content: content,
@@ -291,29 +300,35 @@ struct WebsiteAdminController: RouteCollection {
     
     func editArticlePostHandler(_ req: Request, articleUpdated: AdminArticleData) throws -> Future<Response> {
         
-        return Tag.query(on: req).filter(\.name == articleUpdated.tag).first().flatMap(to: Response.self) { tag in
+        let user = try req.requireAuthenticated(User.self)
+        
+        return try req.parameters.next(Article.self).flatMap(to: Response.self) { article in
+            article.authorID = try user.requireID()
+            article.slugURL = articleUpdated.slugURL
+            article.title = articleUpdated.title
+            article.content = articleUpdated.content
+            article.snippet = articleUpdated.snippet
+            article.editionDate = Date()
+            article.published = articleUpdated.published ?? false
             
-            guard let tag = tag else { fatalError("the tag should exist") }
-            
-            let user = try req.requireAuthenticated(User.self)
-            
-            return try req.parameters.next(Article.self).flatMap(to: Response.self) { article in
-                article.authorID = try user.requireID()
-                article.slugURL = articleUpdated.slugURL
-                article.title = articleUpdated.title
-                article.content = articleUpdated.content
-                article.snippet = articleUpdated.snippet
-                article.editionDate = Date()
-                article.published = articleUpdated.published ?? false
+            return article.update(on: req).flatMap(to: Response.self) { article in
                 
-                let articleFuture = article.update(on: req)
-                let detachFuture = article.tags.detachAll(on: req)
-                let attachFuture = article.tags.attach(tag, on: req)
+                let tags = article.tags
                 
-                
-                return map(to: Response.self, articleFuture, detachFuture, attachFuture) { _, _, _ in
-                    return req.redirect(to: "/admin/articles")
+                return tags.detachAll(on: req).flatMap(to: Response.self) { _ in
                     
+                    var futures = [Future<ArticleTagPivot>]()
+                    
+                    if let tags = articleUpdated.tags {
+                        for tag in tags {
+                            let attachTagFuture = Tag.query(on: req).filter(\.name == tag).first().flatMap(to: ArticleTagPivot.self) { futureTag in
+                                guard let futureTag = futureTag else { fatalError("the tag should exist") }
+                                return article.tags.attach(futureTag, on: req)
+                            }
+                            futures.append(attachTagFuture)
+                        }
+                    }
+                    return futures.flatten(on: req).transform(to: req.redirect(to: "/admin/articles"))
                 }
             }
         }
@@ -490,7 +505,7 @@ struct WebsiteAdminController: RouteCollection {
             .flatMap(to: View.self) { fetchedUsers in
                 
                 var publicUsers = fetchedUsers.map { $0.convertToPublic() }
-
+                
                 var olderPagePath: String?
                 if fetchedUsers.count > paginator.articlesPerPage {
                     publicUsers.removeLast()
@@ -498,10 +513,10 @@ struct WebsiteAdminController: RouteCollection {
                 }
                 
                 let context = AdminUsersContext(tabTitle: paginator.tabTitle,
-                                               pageTitle: paginator.pageTitle,
-                                               users: publicUsers,
-                                               olderPagePath: olderPagePath,
-                                               newerPagePath: paginator.newerPagePath)
+                                                pageTitle: paginator.pageTitle,
+                                                users: publicUsers,
+                                                olderPagePath: olderPagePath,
+                                                newerPagePath: paginator.newerPagePath)
                 return try req.view().render("admin/users", context)
         }
     }
@@ -568,14 +583,14 @@ struct WebsiteAdminController: RouteCollection {
     
     // MARK: - Images Routes
     
-//    // Route to get an image (the filename is in the url)
-//    func getImageHandler(_ req: Request) throws -> Future<Response> {
-//        let filename = try req.parameters.next(String.self)
-//        let workPath = DirectoryConfig.detect().workDir
-//        let imagePath = workPath + "Images/" + filename
-//        
-//        return try req.streamFile(at: imagePath)
-//    }
+    //    // Route to get an image (the filename is in the url)
+    //    func getImageHandler(_ req: Request) throws -> Future<Response> {
+    //        let filename = try req.parameters.next(String.self)
+    //        let workPath = DirectoryConfig.detect().workDir
+    //        let imagePath = workPath + "Images/" + filename
+    //
+    //        return try req.streamFile(at: imagePath)
+    //    }
     
     func uploadImagePostHandler(_ req: Request, data: ImageUploadData) throws -> ImageLocation {
         
@@ -598,7 +613,7 @@ struct WebsiteAdminController: RouteCollection {
         //let location = baseURL?.appendingPathComponent(imagePath).path ?? "/" + imagePath
         return ImageLocation(location: "/" + imagePath)
     }
-        
+    
     
     /*
      func getUsersProfilePictureHandler(_ req: Request) throws -> Future<Response> {
@@ -688,8 +703,8 @@ struct WebsiteAdminController: RouteCollection {
                 let workPath = DirectoryConfig.detect().workDir
                 let userImagePath = workPath + "Images/" + "\(uuid)"
                 try FileManager().createDirectory(atPath: userImagePath,
-                                          withIntermediateDirectories: false,
-                                          attributes: nil)
+                                                  withIntermediateDirectories: false,
+                                                  attributes: nil)
             } catch {
                 fatalError("Can't create user Image folder")
             }
@@ -706,7 +721,7 @@ struct WebsiteAdminController: RouteCollection {
         
         let context = AdminParametersContext(tabTitle: "MyBlog>Admin Parameters",
                                              pageTitle: "MyBlog parameters",
-                                            blogName: parametersManager.blogName,
+                                             blogName: parametersManager.blogName,
                                              articlesPerPage: parametersManager.articlesPerName)
         return try req.view().render("admin/parameters", context)
     }
@@ -749,7 +764,7 @@ struct AdminArticleData: Content {
     var slugURL: String
     var content: String
     var snippet: String
-    var tag: String
+    var tags: [String]?
     var published: Bool?
 }
 
