@@ -65,7 +65,7 @@ final class WebsiteController: RouteCollection {
             if let searchTerm = searchQuery {
                 and.filter(\.title ~~ searchTerm)
             }}
-            .range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            .range(paginator.rangePlusOne).sort(\.created, .descending).all()
         
         return try makeView(on: req, with: articlesFuture, and: paginator)
     }
@@ -91,7 +91,7 @@ final class WebsiteController: RouteCollection {
             if let searchTerm = searchQuery {
                 and.filter(\.title ~~ searchTerm)
             }}
-            .range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            .range(paginator.rangePlusOne).sort(\.created, .descending).all()
         
         return try makeView(on: req, with: articlesFuture, and: paginator)
     }
@@ -150,7 +150,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: 1,
                                       forType: .tag(tagName: tag.name))
             
-            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.created, .descending).all()
                 
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -171,7 +171,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: pageNumber,
                                       forType: .tag(tagName: tag.name))
             
-            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            let articlesFuture = try tag.articles.query(on: req).range(paginator.rangePlusOne).sort(\.created, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -193,7 +193,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: 1,
                                       forType: .user(username: user.username))
             
-            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.created, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }
@@ -214,7 +214,7 @@ final class WebsiteController: RouteCollection {
             let paginator = Paginator(WithPageNumber: pageNumber,
                                       forType: .user(username: user.username))
             
-            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.creationDate, .descending).all()
+            let articlesFuture = try user.articles.query(on: req).range(paginator.rangePlusOne).sort(\.created, .descending).all()
             
             return try self.makeView(on: req, with: articlesFuture, and: paginator)
         }

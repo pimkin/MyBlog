@@ -3,8 +3,7 @@ import Vapor
 
 final class Article: Codable {
     
-    static let separator = "----article----"
-    static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
+    
     
     var id: UUID?
     var title: String
