@@ -22,6 +22,7 @@ final class RouteAdminArticles {
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
+                    let user = try req.requireAuthenticated(User.self)
                     var leaffedArticles = fetchedLeaffedArticles
                     
                     var olderPagePath: String?
@@ -33,6 +34,7 @@ final class RouteAdminArticles {
                     let context = AdminArticlesContext(tabTitle: paginator.tabTitle,
                                                        pageTitle: paginator.pageTitle,
                                                        articles: leaffedArticles,
+                                                       user: user,
                                                        olderPagePath: olderPagePath,
                                                        newerPagePath: paginator.newerPagePath)
                     return try req.view().render("admin/articles", context)
@@ -61,6 +63,8 @@ final class RouteAdminArticles {
             .flatMap(to: View.self) { articles in
                 return try articles.leaf(on: req).flatMap(to: View.self) { fetchedLeaffedArticles in
                     
+                    let user = try req.requireAuthenticated(User.self)
+
                     var leaffedArticles = fetchedLeaffedArticles
                     
                     var olderPagePath: String?
@@ -72,6 +76,7 @@ final class RouteAdminArticles {
                     let context = AdminArticlesContext(tabTitle: paginator.tabTitle,
                                                        pageTitle: paginator.pageTitle,
                                                        articles: leaffedArticles,
+                                                       user: user,
                                                        olderPagePath: olderPagePath,
                                                        newerPagePath: paginator.newerPagePath)
                     return try req.view().render("admin/articles", context)
@@ -219,11 +224,12 @@ final class RouteAdminArticles {
     
     // route for blog.com/admin/articles/download
     func downloadAllArticlesHandler(_ req: Request) throws -> Future<Response> {
-        
+
         let textinator = ArticleTextinator()
         return try textinator.textFileFromAllArticles(on: req)
         
     }
+    
     
     // route for blog.com/admin/articles/createFromTxt
     func createArticlesFromTxtHandler(_ req: Request, data: AdminTextArticleData) throws -> Future<Response> {
@@ -243,6 +249,7 @@ struct AdminArticlesContext: Encodable {
     let tabTitle: String
     let pageTitle: String
     let articles: [Article.Leaffed]
+    let user: User
     let olderPagePath: String?
     let newerPagePath: String?
 }
