@@ -23,8 +23,12 @@
   <div class="form-group">
     <label for="tagSelection">Tag</label>
     <div>
-      #for(tag in tags) {
-        <label><input type="checkbox" aria-label="Checkbox for following text input" name="tags[]" value="#(tag.name)"> #(tag.name) </label>
+      #if(count(tags) != 0) {
+        #for(tag in tags) {
+          <label><input type="checkbox" aria-label="Checkbox for following text input" name="tags[]" value="#(tag.name)" #if(contains(article.tags, tag.name)) { checked } > #(tag.name) </label>
+        }
+      } else {
+        <p>No tag created !</p>
       }
     </div>
   </div>
@@ -34,6 +38,27 @@
   <textarea class="form-control " id="snippet" name="snippet" rows="2" placeholder="Enter the snippet of your article" >#(article.snippet)</textarea>
 </div>
 
+#if(article != nil) {
+<div class="form-group">
+  <label for="created">Created</label>
+  <input type="text" name="created" class="form-control" id="created" value="#(article.created)" placeholder="created date"/>
+</div>
+}
+
+#if(article.edited != nil) {
+<div class="form-group">
+  <label for="edited">Last edited</label>
+  <input type="text" name="edited" class="form-control" id="edited" value="#(article.edited)" placeholder="edited date"/>
+</div>
+}
+
+<div class="form-group">
+  <label for="published"><input type="checkbox" aria-label="Checkbox for following text input" name="tags[]" value="#(tag.name)"  #if(article.published != nil) { checked } > Published</label>
+  <input type="text" name="published" class="form-control" id="published" value="#(article.published)" placeholder="published date"/>
+</div>
+
+
+
 <div class="form-group">
   <label for="content">Content</label>
   <textarea class="form-control tinymce" rows="20" id="content" name="content" placeholder="Enter the content of your article">#(article.content)</textarea>
@@ -41,9 +66,15 @@
 
 
 <div class="row  justify-content-between form-group">
+  #/*
   <div class="custom-control custom-checkbox align-items-center" style="margin-left: 50px">
    <input type="checkbox" class="custom-control-input" id="checkbox_published" name="published" value="true">
    <label class="custom-control-label" for="checkbox_published">Published</label>
+  </div>
+  #*/
+
+  #// Must put a empty div because justify-content-right don't work
+  <div>
   </div>
   <div>
  <button type="submit" class="btn btn-warning" formmethod="GET" formaction="/admin/articles" style="margin-right: 20px;">Cancel</button>

@@ -6,19 +6,31 @@ final class Textinator {
     //static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
     static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--snippet--", "--slugURL--", "--title--"]
     
+    let dateFormatter = DateFormatter()
+    
+    init() {
+        dateFormatter.dateFormat = "MM/dd/yyyy hh:mma"
+    }
+    
     func textFrom(article: Article) -> String {
         
         var resultText = ""
         
-        var text = "----article----"
+        var text = "----article----\r\n"
         text = text + "--title--\r\n" + "\(article.title)\r\n"
         text = text + "--slugURL--\r\n" + "\(article.slugURL)\r\n"
         text = text + "--snippet--\r\n" + "\(article.snippet)\r\n"
         //text = text + "--author--\r\n" + "\(article.snippet)\r\n"
-        text = text + "--created--\r\n" + "\(article.snippet)\r\n"
-        text = text + "--edited--\r\n" + "\(article.snippet)\r\n"
-        text = text + "--published--\r\n" + "\(article.snippet)\r\n"
-        text = text + "--mainPicture--\r\n" + "\(article.snippet)\r\n"
+        text = text + "--created--\r\n" + "\(dateFormatter.string(from: article.created))\r\n"
+        if let created = article.edited {
+            text = text + "--edited--\r\n" + "\(dateFormatter.string(from: created))\r\n"
+        }
+        if let published = article.published {
+            text = text + "--published--\r\n" + "\(dateFormatter.string(from: published))\r\n"
+        }
+        if let mainPicture = article.mainPicture {
+            text = text + "--mainPicture--\r\n" + "\(mainPicture)\r\n"
+        }
         text = text + "--content--\r\n" + "\(article.content)"
         resultText = resultText + text
         
@@ -59,7 +71,7 @@ final class Textinator {
         
         var textArticle = text
         
-        let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
+        let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--snippet--", "--slugURL--", "--title--"]
         var articleDictionary: [String: String] = [String: String]()
         for identifier in identifiers {
             let components = textArticle.components(separatedBy: identifier)
@@ -74,22 +86,25 @@ final class Textinator {
             let slugURL = articleDictionary["--slugURL--"],
             let snippet = articleDictionary["--snippet--"],
             //let author = articleDictionary["--author--"],
-            //let created = articleDictionary["--created--"],
+            let createdString = articleDictionary["--created--"],
+            let created = dateFormatter.date(from : createdString),
             let mainPicture = articleDictionary["--mainPicture--"],
             let content = articleDictionary["--content--"] else {
                 throw Abort(.internalServerError)
         }
         
-        let published: Date? = nil
-//        if let publishedDateString = articleDictionary["--published--"] {
-//            published =
-//        }
-        let edited: Date? = nil
-        let created = Date()
-        
+        var published: Date? = nil
+        if let publishedString = articleDictionary["--published--"] {
+            published = dateFormatter.date(from: publishedString)
+        }
+            
+        var edited: Date? = nil
+        if let editedString = articleDictionary["--edited--"] {
+            edited = dateFormatter.date(from: editedString)
+        }
+
+            
         let user = try req.requireAuthenticated(User.self)
-        
-        
         
         return Article(title: title,
                                        slugURL: slugURL,

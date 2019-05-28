@@ -136,16 +136,19 @@ final class RouteAdminArticles {
     
     // GET route for blog.com/admin/articles/articleID/edit
     func editArticleHandler(_ req: Request) throws -> Future<View> {
-        let articleFuture = try req.parameters.next(Article.self)
-        let tagsFuture = Tag.query(on: req).all()
-        return flatMap(to: View.self, articleFuture, tagsFuture) { article, tags in
+        
+        return try req.parameters.next(Article.self).flatMap(to: View.self) { article in
+            return try article.leaf(on: req).flatMap(to: View.self) { leaffedArticle in
+                return Tag.query(on: req).all().flatMap(to: View.self) { tags in
             
-            let context = AdminArticleContext(tabTitle: "MyBlog>Admin",
+                    let context = AdminArticleContext(tabTitle: "MyBlog>Admin",
                                               pageTitle: "Creation Article",
                                               tags: tags,
-                                              article: article,
+                                              article: leaffedArticle,
                                               isEditing: true)
-            return try req.view().render("admin/article", context)
+                    return try req.view().render("admin/article", context)
+                }
+            }
         }
     }
     
@@ -160,8 +163,20 @@ final class RouteAdminArticles {
             article.title = articleUpdated.title
             article.content = articleUpdated.content
             article.snippet = articleUpdated.snippet
-            //article.editionDate = Date()
-            //article.published = articleUpdated.published ?? false
+            article.mainPicture = articleUpdated.mainPicture
+            
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "MM/dd/yyyy hh:mma"
+            if let createdString = articleUpdated.created,
+                let created = dateFormatter.date(from: createdString) {
+                article.created = created
+            } else {
+                article.created = Date()
+            }
+            
+            if let publishedString = articleUpdated.published {
+                article.published = dateFormatter.date(from: publishedString)
+            }
             
             return article.update(on: req).flatMap(to: Response.self) { article in
                 
@@ -246,7 +261,7 @@ struct AdminArticleContext: Encodable {
     let tabTitle: String
     let pageTitle: String
     let tags: [Tag]
-    let article: Article?
+    let article: Article.Leaffed?
     let isEditing: Bool
 }
 
@@ -256,8 +271,9 @@ struct AdminArticleData: Content {
     var content: String
     var snippet: String
     var tags: [String]?
-    var mainPicture: String
-    var published: Bool?
+    var mainPicture: String?
+    var created: String?
+    var published: String?
 }
 
 struct AdminTextArticleData: Content {

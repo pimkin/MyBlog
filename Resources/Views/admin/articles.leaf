@@ -1,117 +1,138 @@
 #set("content") {
 
-<div>
+	<div>
 
-	<h1>#(pageTitle)</h1>
+		<h1>#(pageTitle)</h1>
 
-	<br>
-	<br>
+		<br>
+		<br>
 
-	<div class="row justify-content-between">
-	
-		<form>
-			<button type="submit" class="btn btn-primary" formmethod="GET" formaction="/admin/articles/create">New Article</button>
-		</form>
+		<div class="row justify-content-between">
 
-		<form>
-       		 <div class="row form-group justify-content-around">
-           		<div style="margin-right: 20px;">
-           			 <input type="text" class="form-control" name="search"  placeholder="Search for..." >
-           		</div >
-            	<div>
-            		<span class="input-group-btn">
-              			<button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/articles">Go!</button>
-            		</span>
-            	</div>
-          	</div>
-      	</form>
-	</div>
+			<form>
+				<button type="submit" class="btn btn-primary" formmethod="GET" formaction="/admin/articles/create">New Article</button>
+			</form>
 
-	<div class="row justify-content-between">
-		<form method="post" action="/admin/articles/createFromTxt" enctype="multipart/form-data">
-			#//<div class="form-group">
-				 <div class="row justify-content-left">
-
-					<button type="submit" class="btn btn-primary">Create a article from file</button>
-					<div style="margin-left: 20px;">
-						<label for="file">Select a article.txt file</label>
-						<input type="file" name="file" class="form-control-file" id="file">
+			<form>
+				<div class="row form-group justify-content-around">
+					<div style="margin-right: 20px;">
+						<input type="text" class="form-control" name="search"  placeholder="Search for..." >
+					</div >
+					<div>
+						<span class="input-group-btn">
+							<button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/articles">Go!</button>
+						</span>
 					</div>
 				</div>
-		</form>
-	</div>
+			</form>
+		</div>
 
-	<div class="row justify-content-between" style="margin-top: 20px;">
-		<form method="post" action="/admin/articles/createAllFromTxt" enctype="multipart/form-data">
-			<div class="row justify-content-left">
-				<button type="submit" class="btn btn-primary">Create Articles from file</button>
-				<div style="margin-left: 20px;">
-					<label for="file">Select a .txt file</label>
-					<input class="form-control-file" type="file" name="file" id="file">
-				</div>
+		#/*
+		<div class="row justify-content-between">
+			<form method="post" action="/admin/articles/createFromTxt" enctype="multipart/form-data">
+				#//<div class="form-group">
+					<div class="row justify-content-left">
+
+						<button type="submit" class="btn btn-primary">Create a article from file</button>
+						<div style="margin-left: 20px;">
+							<label for="file">Select a article.txt file</label>
+							<input type="file" name="file" class="form-control-file" id="file">
+						</div>
+					</div>
+				</form>
 			</div>
-			
-		</form>
-		<form>
-			<button class="btn btn-primary" type="submit"  formmethod="GET" formaction="/admin/articles/download">Download all articles</button>
-		</form>
-	</div>
-</div>
-
-#if(count(articles) > 0) {
 
 
-<div>
-	#for(article in articles) {
-	<div class="card text-center" style="margin-top: 10px">
-		<div class="card-body">
-			
-			<h4><a href="/#(article.slugURL)" style="color:grey">#(article.title)</a></h4>
-			
-			<p class="card-text">#(article.snippet)</p>
+			#// Create article(s) from file .txt
+			<div class="row justify-content-between" style="margin-top: 20px;">
+				<form method="post" action="/admin/articles/createAllFromTxt" enctype="multipart/form-data">
+					<div class="row justify-content-left">
+						<button type="submit" class="btn btn-primary">Create Article(s) from file</button>
+						<div style="margin-left: 20px;">
+							<label for="file">Select a .txt file</label>
+							<input class="form-control-file" type="file" name="file" id="file">
+						</div>
+					</div>
 
-			<h5>Published by <a href="/admin/user/#(article.authorName)" style="color:grey">#(article.authorName)</a>, the #(article.creationDate)</h5>
-
-			<h6>Tags :#for(tag in article.tagsNames) { #(tag) }</h6>
-			
-			<div>
+				</form>
 				<form>
-						#// <button type="submit" formmethod="GET" formaction="/#(article.slugURL)">Show</button>
-						<button class="btn btn-primary btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/download">Download .txt</button>
-						<button class="btn btn-warning btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/edit">Edit</button>
-						<button class="btn btn-danger btn-sm" type="submit" formmethod="POST" formaction="/admin/articles/#(article.id)/delete">Delete</button>
+					<button class="btn btn-primary" type="submit"  formmethod="GET" formaction="/admin/articles/download">Download all articles</button>
 				</form>
 			</div>
 		</div>
-	</div>
-}
-</div>
+		#*/
 
-} else { 
-	<h2 align="center">There is no article in the database</h2>
-}
+		#// Create article(s) from file .txt
+		<div class="row justify-content-between">
+			<form method="post" action="/admin/articles/createAllFromTxt" enctype="multipart/form-data">
+				<div class="row justify-content-left">
+					<button type="submit" class="btn btn-primary">Create Article(s) from .txt file</button>
+					<div style="margin-left: 20px;">
+						<input class="form-control-file" type="file" name="file" id="file">
+					</div>
+				</div>
 
-<br>
-<br>
-
-
-<!-- Pagination -->
-<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
-  <li class="page-item #if(newerPagePath == nil) {disabled}">
-    <a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
-  </li>
-  <li class="page-item  #if(olderPagePath == nil) {disabled}">
-    <a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
-  </li>
-</ul>
-
-<br />
+			</form>
+			<form>
+				<button class="btn btn-primary" type="submit"  formmethod="GET" formaction="/admin/articles/download">Download all articles</button>
+			</form>
+		</div>
 
 
 
+		#if(count(articles) > 0) {
+
+			<div>
+				#for(article in articles) {
+					<div class="card text-center" style="margin-top: 10px">
+						<div class="card-body">
+
+							<h4><a href="/#(article.slugURL)" style="color:grey">#(article.title)</a></h4>
+
+							<p class="card-text">#(article.snippet)</p>
+
+							<h5>Published by <a href="/admin/user/#(article.authorName)" style="color:grey">#(article.authorName)</a>, the #(article.created)</h5>
+
+							<h6>Tags :#for(tag in article.tags) { #(tag) }</h6>
+
+							<div>
+								<form>
+									#// <button type="submit" formmethod="GET" formaction="/#(article.slugURL)">Show</button>
+									<button class="btn btn-primary btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/download">Download .txt</button>
+									<button class="btn btn-warning btn-sm" type="submit" formmethod="GET" formaction="/admin/articles/#(article.id)/edit">Edit</button>
+									<button class="btn btn-danger btn-sm" type="submit" formmethod="POST" formaction="/admin/articles/#(article.id)/delete">Delete</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+
+		} else {
+			<h2 align="center">There is no article in the database</h2>
+		}
+
+		<br>
+		<br>
+
+
+		<!-- Pagination -->
+		<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
+			<li class="page-item #if(newerPagePath == nil) {disabled}">
+				<a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
+			</li>
+			<li class="page-item  #if(olderPagePath == nil) {disabled}">
+				<a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
+			</li>
+		</ul>
+
+		<br />
 
 
 
-}
 
-#embed("admin/base")
+
+
+	}
+
+	#embed("admin/base")

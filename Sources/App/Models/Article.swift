@@ -14,7 +14,7 @@ final class Article: Codable {
     var created: Date
     var edited: Date?
     var published: Date?
-    var mainPicture: String
+    var mainPicture: String?
     
     
     init(title: String,
@@ -25,7 +25,7 @@ final class Article: Codable {
          created: Date,
          edited: Date?,
          published: Date?,
-         mainPicture: String) {
+         mainPicture: String?) {
         self.title = title
         self.slugURL = slugURL
         self.content = content
@@ -67,7 +67,7 @@ extension Article {
         var published: String?
         var mainPicture: String?
         var authorName: String
-        var tagsNames: [String]
+        var tags: [String]
         
         
         init(withArticle article: Article, authorName: String, tagsNames: [String]) {
@@ -83,12 +83,14 @@ extension Article {
             self.snippet = article.snippet
             self.created = dateFormatter.string(from: article.created)
             self.authorName = authorName
-            self.tagsNames = tagsNames
+            self.tags = tagsNames
+            self.mainPicture = article.mainPicture
             
             if let editedDate = article.edited,
                 let publishedDate = article.published {
                     self.edited = dateFormatter.string(from: editedDate)
                     self.published = dateFormatter.string(from: publishedDate)
+                
             }
             
         }
