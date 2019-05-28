@@ -123,6 +123,31 @@ final class RouteAdminTags {
         }
     }
     
+    // MARK: - Routes for txt downloading/creating
+    
+    // GET route for blog/admin/tags/download
+    func downloadTagsHandler(_ req: Request) throws -> Future<Response> {
+        return Tag.query(on: req).all().flatMap(to: Response.self) { tags in
+            let tagTextinator = TagTextinator()
+            return try tagTextinator.textFileFromAllTags(on: req)
+        }
+    }
+    
+    // GET route for blog/admin/tags/tagID/download
+    func downloadTagHandler(_ req: Request) throws -> Future<Response> {
+        let futureTag = try req.parameters.next(Tag.self)
+        let tagTextinator = TagTextinator()
+        return try tagTextinator.textFileFrom(futureTag: futureTag, on: req)
+    }
+    
+    // POST route for blog/admin/tags/download
+    func createTagsFromTxtPostHandler(req: Request, data :AdminTagsTxtData) throws -> Future<Response> {
+        let file = data.file
+        let tagTextinator = TagTextinator()
+        return try tagTextinator.tagsFromFile(file: file, on: req).transform(to: req.redirect(to: "/admin/tags"))
+    }
+    
+    
 }
 
 // MARK: - Struct Tags
@@ -148,4 +173,10 @@ struct AdminTagContext: Encodable {
 struct AdminTagData: Content {
     let name: String
     let description: String
+}
+
+
+// for Post blog.com/admin/tags/download
+struct AdminTagsTxtData: Content {
+    let file: File
 }

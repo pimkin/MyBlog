@@ -212,7 +212,7 @@ final class RouteAdminArticles {
     func downloadArticleHandler(_ req: Request) throws -> Future<Response> {
     
         let futureArticle = try req.parameters.next(Article.self)
-        let textinator = Textinator()
+        let textinator = ArticleTextinator()
         return try textinator.textFileFrom(futureArticle: futureArticle, on: req)
     
     }
@@ -220,28 +220,18 @@ final class RouteAdminArticles {
     // route for blog.com/admin/articles/download
     func downloadAllArticlesHandler(_ req: Request) throws -> Future<Response> {
         
-        let textinator = Textinator()
+        let textinator = ArticleTextinator()
         return try textinator.textFileFromAllArticles(on: req)
         
     }
     
     // route for blog.com/admin/articles/createFromTxt
-    func createArticleFromTxtHandler(_ req: Request, data: AdminTextArticleData) throws -> Future<Response> {
+    func createArticlesFromTxtHandler(_ req: Request, data: AdminTextArticleData) throws -> Future<Response> {
         
         let file = data.file
-        let textinator = Textinator()
+        let textinator = ArticleTextinator()
         
         return try textinator.articlesFromFile(file: file, on: req).transform(to: req.redirect(to: "/admin/articles/"))
-    }
-    
-    // route for blog.com/admin/articles/createAllFromTxt
-    func createAllArticlesFromTxtHandler(req: Request, data: AdminTextArticleData) throws -> Future<Response> {
-        
-        let file = data.file
-        let textinator = Textinator()
-        
-        return try textinator.articlesFromFile(file: file, on: req).transform(to: req.redirect(to: "/admin/articles/"))
-        
     }
     
 }

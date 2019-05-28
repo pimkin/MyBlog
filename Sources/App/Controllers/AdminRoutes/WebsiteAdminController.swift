@@ -37,11 +37,10 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.post("articles", Article.parameter, "delete", use: routeAdminArticles.deleteArticlePostHandler)
         
         
-        // MARK: - Routes for Txt file (download and creation)
+        // MARK: - Routes for Txt articles file (download and creation)
         
-        // route for blog.com/admin/articles/createFromTxt and ../createAllFromTxt
-        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createFromTxt", use: routeAdminArticles.createArticleFromTxtHandler)
-        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createAllFromTxt", use: routeAdminArticles.createAllArticlesFromTxtHandler)
+        // route for blog.com/admin/articles/createFromTxt
+        adminRoutes.post(AdminTextArticleData.self, at:"articles", "createFromTxt", use: routeAdminArticles.createArticlesFromTxtHandler)
         // route for blog.com/admin/articles/download and blog.com/admin/articles/articleID/download
         adminRoutes.get("articles", "download", use: routeAdminArticles.downloadAllArticlesHandler)
         adminRoutes.get("articles", Article.parameter, "download", use: routeAdminArticles.downloadArticleHandler)
@@ -63,6 +62,16 @@ struct WebsiteAdminController: RouteCollection {
         adminRoutes.post(AdminTagData.self, at:"tags", Tag.parameter, "edit", use: routeAdminTags.editTagPostHandler)
         // Route for blog.com/admin/tags/tagID/delete/
         adminRoutes.post("tags", Tag.parameter, "delete", use: routeAdminTags.deleteTagPostHandler)
+        
+        // MARK: - Route for txt tags file
+        
+        // Route for blog.com/admin/tags/download
+        adminRoutes.get("tags", "download", use: routeAdminTags.downloadTagsHandler)
+        // Route for blog.com/admin/tags/tagID/download
+        adminRoutes.get("tags", Tag.parameter, "download", use: routeAdminTags.downloadTagHandler)
+        // Route for blog.com/tags/createFromTxt
+        adminRoutes.post(AdminTagsTxtData.self, at:"tags", "createFromTxt", use: routeAdminTags.createTagsFromTxtPostHandler)
+        
         
         
         // MARK: - Routes for users

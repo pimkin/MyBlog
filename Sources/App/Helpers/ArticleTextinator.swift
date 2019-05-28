@@ -1,9 +1,8 @@
 import Vapor
 
-final class Textinator {
+final class ArticleTextinator {
     
     static let separator = "----article----"
-    //static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--author", "--snippet--", "--slugURL--", "--title--"]
     static let identifiers = ["--content--", "--mainPicture--", "--published--", "--edited--", "--created--", "--snippet--", "--slugURL--", "--title--"]
     
     let dateFormatter = DateFormatter()
@@ -13,8 +12,6 @@ final class Textinator {
     }
     
     func textFrom(article: Article) -> String {
-        
-        var resultText = ""
         
         var text = "----article----\r\n"
         text = text + "--title--\r\n" + "\(article.title)\r\n"
@@ -32,9 +29,8 @@ final class Textinator {
             text = text + "--mainPicture--\r\n" + "\(mainPicture)\r\n"
         }
         text = text + "--content--\r\n" + "\(article.content)"
-        resultText = resultText + text
         
-        return resultText
+        return text
     }
     
     func textFileFrom(futureArticle: Future<Article>, on req: Request) throws -> Future<Response> {
