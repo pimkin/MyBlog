@@ -1,90 +1,106 @@
 #set("content") {
 
-<div class="container"></div>
+	<div class="container"></div>
 
-<br>
-<br>
+	<br>
+	<br>
 
-<h1 align="center">#(pageTitle)</h1>
+	<h1 align="center">#(pageTitle)</h1>
 
-<br>
-<br>
+	<br>
+	<br>
 
-<div class="row justify-content-between">
-	<form>
-	<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/tags/create">New tag</button>	</form>
-
-	<form>
-        <div class="row form-group justify-content-around">
-           <div style="margin-right: 20px;">
-            <input type="text" class="form-control" name="search"  placeholder="Search for..." >
-           </div >
-            <div>
-            	<span class="input-group-btn">
-              <button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/tags">Go!</button>
-            	</span>
-            </div>
-          </div>
-      </form>
-	</div>
+	<div class="row justify-content-between">
+		<form>
+			<button class="btn btn-primary" type="submit" formmethod="GET" formaction="/admin/tags/create">New tag</button>	</form>
 
 
 
-
-
-<div>
-
-	#if(count(tags) > 0) {
-
-		#for(tag in tags) {
-
-	
-			<div class="card text-center" style="margin-top: 10px;">
-				<div class="card-body">
-					<div class="row">
-						<div class="col-2">
-							<h5><span> #(tag.name)</span></h5>
-						</div>
-						<div class="col-6">
-							<p class="card-text">#(tag.description)</p>
-						</div>
-						<div class="col-4">
-							<form>
-								<div>
-									<button class="btn btn-warning" type="submit" formmethod="GET" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
-									<button class="btn btn-danger" type="submit" formmethod="POST" formaction="/admin/tags/#(tag.id)/delete">Delete</button>
-								</div>
-							</form>
-						</div>
+			<form>
+				<div class="row form-group justify-content-around">
+					<div style="margin-right: 20px;">
+						<input type="text" class="form-control" name="search"  placeholder="Search for..." >
+					</div >
+					<div>
+						<span class="input-group-btn">
+							<button class="btn btn-secondary" type="submit" formmethod="GET" formaction="/admin/tags">Go!</button>
+						</span>
 					</div>
 				</div>
-			</div>
-		}
+			</form>
+		</div>
 
-	} else { 
-			<h2 align="center">No tag have been created yet !</h2>
+
+		#// Create tag(s) from file .txt
+		<div class="row justify-content-between">
+			<form method="post" action="/admin/tags/createFromTxt" enctype="multipart/form-data">
+				<div class="row justify-content-left">
+					<button type="submit" class="btn btn-primary">Create tag(s) from .txt file</button>
+					<div style="margin-left: 20px;">
+						<input class="form-control-file" type="file" name="file" id="file">
+					</div>
+				</div>
+
+			</form>
+			<form>
+				<button class="btn btn-primary" type="submit"  formmethod="GET" formaction="/admin/tags/download">Download all tags</button>
+			</form>
+		</div>
+
+
+		<div>
+
+			#if(count(tags) > 0) {
+
+				#for(tag in tags) {
+
+
+					<div class="card text-center" style="margin-top: 10px;">
+						<div class="card-body">
+							<div class="row">
+								<div class="col-2">
+									<h5><span> #(tag.name)</span></h5>
+								</div>
+								<div class="col-6">
+									<p class="card-text">#(tag.description)</p>
+								</div>
+								<div class="col-4">
+									<form>
+										<div>
+											<button class="btn btn-warning" type="submit" formmethod="GET" formaction="/admin/tags/#(tag.id)/edit">Edit</button>
+											<button class="btn btn-danger" type="submit" formmethod="POST" formaction="/admin/tags/#(tag.id)/delete">Delete</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
+
+			} else {
+				<h2 align="center">No tag have been created yet !</h2>
+			}
+
+
+			<br>
+			<br>
+
+
+			<!-- Pagination -->
+			<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
+				<li class="page-item #if(newerPagePath == nil) {disabled}">
+					<a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
+				</li>
+				<li class="page-item  #if(olderPagePath == nil) {disabled}">
+					<a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
+				</li>
+			</ul>
+
+			<br />
+
+		</div>
+
+
 	}
 
-
-	<br>
-	<br>
-
-
-<!-- Pagination -->
-<ul class="pagination justify-content-center mb-4" #if(newerPagePath == nil && olderPagePath == nil) {style="visibility: hidden;"} >
-  <li class="page-item #if(newerPagePath == nil) {disabled}">
-    <a class="page-link" href="#(newerPagePath)">&larr; Newer</a>
-  </li>
-  <li class="page-item  #if(olderPagePath == nil) {disabled}">
-    <a class="page-link" href="#(olderPagePath)">Older &rarr;</a>
-  </li>
-</ul>
-
-<br />
-
-</div>
-
-
-}
-
-#embed("admin/base")
+	#embed("admin/base")

@@ -24,7 +24,7 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 
     // Configure a SQLite database
     // let sqlite = try SQLiteDatabase(storage: .file(path: "/app/base.sqlite"))
-    let sqlite = try SQLiteDatabase(storage: .file(path: "/Users/pierre/Desktop/base.sqlite"))
+    let sqlite = try SQLiteDatabase(storage: .file(path: "base.sqlite"))
 
 
     // Register the configured SQLite database to the database config.
